@@ -175,3 +175,11 @@ INSERT INTO OrderItems (OrderItemID, OrderID, MenuItemID, Quantity) VALUES
 (3, 3, 2, 1),
 (4, 4, 4, 3),
 (5, 5, 5, 2);
+
+CREATE TRIGGER AddAccountingEntryAfterPayment
+AFTER INSERT ON Orders
+FOR EACH ROW
+BEGIN
+    INSERT INTO Accountings (TransactionDate, Amount, TypeID, CustomerID, EmployeeID)
+    VALUES (NEW.OrderDate, NEW.TotalAmount, 1, NEW.CustomerID, NEW.EmployeeID);
+END
