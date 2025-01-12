@@ -1,10 +1,45 @@
 import tkinter
 from tkinter import filedialog, Menu
 from tkinter import messagebox
+from tkinter import *
 import sqlite3
 
 sqlite = None  
 kursor = None  
+
+def database_connected():
+    try:
+        kursor = sqlite.cursor()
+        kursor.execute("PRAGMA schema_version;") # execute test
+        return True
+    except sqlite3.Error as e:
+        return False
+
+def switch_view(view):
+    global m, nav_db_struct, nav_browse_data, nav_sql, label_sql
+    
+    match(view):
+        case "1":
+            nav_db_struct.config(bg=m.cget("bg"))
+            nav_browse_data.config(bg='lightgray')
+            nav_sql.config(bg='lightgray')
+            
+            label_sql.pack_forget()
+        case "2":
+            nav_db_struct.config(bg='lightgray')
+            nav_browse_data.config(bg=m.cget("bg"))
+            nav_sql.config(bg='lightgray')
+            
+            label_sql.pack_forget()
+        case "3":
+            nav_db_struct.config(bg='lightgray')
+            nav_browse_data.config(bg='lightgray')
+            nav_sql.config(bg=m.cget("bg"))
+            
+            label_sql.pack(fill='x', pady=(2, 0))  # 2px margin above the frame
+    
+
+            
 
 def import_db():
     global sqlite, kursor, inputtxt, printButton
@@ -43,14 +78,30 @@ m.title("SQLite Test")
 m.geometry("1000x500")
 
 
-navbar = Menu(m)
-filemenu = Menu(navbar, tearoff=0)
+menuBar = Menu(m)
+filemenu = Menu(menuBar, tearoff=0)
 filemenu.add_command(label="Open Database", command=import_db)
-navbar.add_cascade(label="File", menu=filemenu)
-m.config(menu=navbar)
+menuBar.add_cascade(label="File", menu=filemenu)
+m.config(menu=menuBar)
 
 
-inputtxt = tkinter.Text(m, height=5, width=50)
-printButton = tkinter.Button(m, text="Enter Query", command=execute_query)
+navbar = tkinter.Frame(m, bg='lightgray', padx=5, pady=0)
+navbar.pack(fill='x', side='top')
+
+
+nav_db_struct = tkinter.Button(navbar, text="Database structure", borderwidth=0, relief="flat", bg=m.cget("bg"), command=lambda: switch_view("1"))
+nav_db_struct.pack(side="left")
+
+nav_browse_data = tkinter.Button(navbar, text="Browse data", borderwidth=0, relief="flat", bg='lightgray', command=lambda: switch_view("2"))
+nav_browse_data.pack(side="left")
+
+nav_sql = tkinter.Button(navbar, text="Execute SQL", borderwidth=0, relief="flat", bg='lightgray', command=lambda: switch_view("3"))
+nav_sql.pack(side="left")
+
+label_sql = tkinter.Frame(m, padx=5, pady=5)
+
+
+inputtxt = tkinter.Text(label_sql, height=5, width=50)
+printButton = tkinter.Button(label_sql, text="Enter Query", command=execute_query)
 
 m.mainloop()
