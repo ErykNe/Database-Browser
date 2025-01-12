@@ -1,0 +1,6 @@
+OrderID,CustomerID,StaffID,MenuID,OrderDateTime,TotalAmount,PaymentMethod
+1,1,1,2,2025-01-12 13:05:05,19.98,Cash
+2,3,3,3,2025-01-12 13:05:05,29.98,Card
+3,4,4,4,2025-01-12 13:05:05,12.98,Card
+4,5,5,5,2025-01-12 13:05:05,9.98,Cash
+5,1,2,3,2025-01-12 13:05:05,44.97,Cash

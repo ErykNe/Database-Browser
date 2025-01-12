@@ -1,6 +1,0 @@
-OrderID,CustomerID,StaffID,MenuID,OrderDateTime,TotalAmount,PaymentStatus
-1,1,1,2,2025-01-12 12:40:52,19.98,Pending
-2,3,3,3,2025-01-12 12:40:52,29.98,Pending
-3,4,4,4,2025-01-12 12:40:52,12.98,Pending
-4,5,5,5,2025-01-12 12:40:52,9.98,Pending
-5,1,2,3,2025-01-12 12:40:52,44.97,Pending
