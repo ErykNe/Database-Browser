@@ -7,14 +7,6 @@ import sqlite3
 sqlite = None  
 kursor = None  
 
-def database_connected():
-    try:
-        kursor = sqlite.cursor()
-        kursor.execute("PRAGMA schema_version;") # execute test
-        return True
-    except sqlite3.Error as e:
-        return False
-
 def switch_view(view):
     global m, nav_db_struct, nav_browse_data, nav_sql, label_sql
     
