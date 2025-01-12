@@ -9,7 +9,6 @@ kursor = None
 
 def switch_view(view):
     global m, nav_db_struct, nav_browse_data, nav_sql, label_sql
-    
     match(view):
         case "1":
             nav_db_struct.config(bg=m.cget("bg"))
@@ -32,6 +31,23 @@ def switch_view(view):
     
 
             
+            
+def create_db_from_sql(sql_file):
+    global sqlite, kursor
+    
+    try:
+        sqlite = sqlite3.connect("temp.db")
+        kursor = sqlite.cursor()
+        
+        with open(sql_file, 'r') as f:
+            sql = f.read()
+            
+        kursor.executescript(sql)
+        sqlite.commit()
+
+    except sqlite3.Error as e:
+        messagebox.showerror("Error","Error creating database: {e}")
+        
 
 def import_db():
     global sqlite, kursor, inputtxt, printButton, m
@@ -54,6 +70,28 @@ def import_db():
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error connecting to database: {e}")
             import_db()
+            
+def import_db_from_sql():    
+    global sqlite, kursor, inputtxt, printButton, m
+
+    db_path = filedialog.askopenfilename(
+        title="Select a .sql file",
+        filetypes=[("SQLite Database", "*.sql")]
+    )
+    
+    if db_path:  
+        try:
+            create_db_from_sql(db_path)
+            kursor.execute("PRAGMA schema_version;") # execute test
+            
+            # Show the Text box and Button only if the connection is successful
+            m.title("SQLite Database Manager - " + str(db_path))
+            inputtxt.pack()
+            printButton.pack()
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Error connecting to database: {e}")
+            import_db_from_sql()       
+     
 
 def execute_query():
     if sqlite:
@@ -77,7 +115,13 @@ filemenu.add_command(label="Open Database", command=import_db)
 menuBar.add_cascade(label="File", menu=filemenu)
 
 importmenu = Menu(menuBar, tearoff=0)
-importmenu.add_command(label="Database")
+
+database_submenu = Menu(importmenu, tearoff=0)
+database_submenu.add_command(label="From SQL File", command=import_db_from_sql)
+database_submenu.add_command(label="From XML File")
+
+importmenu.add_cascade(label="Database", menu=database_submenu)
+
 importmenu.add_command(label="Table(s)")
 menuBar.add_cascade(label="Import", menu=importmenu)
 
