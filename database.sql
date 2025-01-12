@@ -184,6 +184,22 @@ VALUES
     (5, 5, 9.98, 5), 
     (1, 2, 44.97, 3);
 
+INSERT INTO OrderDetails (OrderID,MenuItemID,Quantity,Price)
+VALUES 
+    (1,2,2,9.99),
+    (2,3,2,14.99),
+    (3,4,2,6.49),
+    (4,5,2,4.99),
+    (5,3,3,14.99);
+
+INSERT INTO Payments (OrderID,Amount,PaymentMethod)
+VALUES 
+    (1,19.98,'Pending'),
+    (2,29.98,'Pending'),
+    (3,12.98,'Pending'),
+    (4,9.98,'Pending'),
+    (5,44.97,'Pending');
+
 CREATE TRIGGER after_insert_orders
 AFTER INSERT ON Orders
 FOR EACH ROW
