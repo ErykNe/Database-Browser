@@ -1,3 +1,4 @@
+import os
 import tkinter
 from tkinter import filedialog, Menu
 from tkinter import messagebox
@@ -29,13 +30,14 @@ def switch_view(view):
             
             label_sql.pack(fill='x', pady=(2, 0))  # 2px margin above the frame
     
-
-            
-            
 def create_db_from_sql(sql_file):
     global sqlite, kursor
     
     try:
+        
+        if os.path.exists("temp.db"):
+            os.remove("temp.db")
+
         sqlite = sqlite3.connect("temp.db")
         kursor = sqlite.cursor()
         
