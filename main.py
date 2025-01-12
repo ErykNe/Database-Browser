@@ -23,27 +23,44 @@ def switch_tables(event):
     
     children = label_browse_data.winfo_children()
     
-    # Destroy the second child (if it exists)
     if len(children) > 1:
-        children[1].destroy()
+        a = 0
+        for child in children:
+            if(a != 0):
+                child.destroy()
+            a+=1    
     
-    tree = ttk.Treeview(label_browse_data)
+    h = tkinter.Scrollbar(label_browse_data, orient = 'horizontal')
+    h.pack(side = BOTTOM, fill = X)
+    v = tkinter.Scrollbar(label_browse_data)
+    v.pack(side = RIGHT, fill = Y)
+
+    tree = ttk.Treeview(label_browse_data,
+                 xscrollcommand = h.set, 
+                 yscrollcommand = v.set)
+    
+    h.config(command=tree.xview)
+  
+
+    v.config(command=tree.yview)
+    
     tree["columns"] = columns
     tree["show"] = "headings"
     
-    # Set the column headings and width
-    for col in columns:
-        tree.heading(col, text=col)
-        tree.column(col, width=100, anchor="center")
+    max_lengths = [len(col) for col in columns]  
     
-    # Insert the data from the query result into the Treeview
-
+    for row in result:
+        for i, value in enumerate(row):
+            max_lengths[i] = max(max_lengths[i], len(str(value))) 
+    
+    for i, col in enumerate(columns):
+        tree.heading(col, text=col)
+        tree.column(col, width=max(max_lengths[i] * 10, 100), anchor="center")  
+    
     for row in result:
         tree.insert('', 'end', values=row)
         
-    tree.pack(expand=True, fill='both') 
-    
-
+    tree.pack()
     
 
 def switch_view(view):
@@ -60,8 +77,8 @@ def switch_view(view):
             nav_db_struct.config(bg='lightgray')
             nav_browse_data.config(bg=m.cget("bg"))
             nav_sql.config(bg='lightgray')
-            
-            label_browse_data.pack()
+            label_browse_data.place(x=0)
+            label_browse_data.pack(side='left', fill='both')
             label_sql.pack_forget()
         case "3":    
             nav_db_struct.config(bg='lightgray')
@@ -113,7 +130,8 @@ def import_db():
             
             inputtxt.pack()
             printButton.pack()
-            combo.pack()
+            combo.place(x=0)
+            combo.pack(side='top')
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error connecting to database: {e}")
             import_db()
@@ -199,6 +217,7 @@ nav_sql.pack(side="left")
 
 label_sql = tkinter.Frame(m, padx=5, pady=5)
 label_browse_data = tkinter.Frame(m, padx=5, pady=5)
+    
 
 
 inputtxt = tkinter.Text(label_sql, height=5, width=50)
