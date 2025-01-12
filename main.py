@@ -1,5 +1,6 @@
 import tkinter
 from tkinter import filedialog, Menu
+from tkinter import messagebox
 import sqlite3
 
 sqlite = None  
@@ -15,27 +16,26 @@ def import_db():
     
     if db_path:  
         try:
-            # Connect to the SQLite database
             sqlite = sqlite3.connect(db_path)
             kursor = sqlite.cursor()
-            print("Successfully connected with the database")
-
+            kursor.execute("PRAGMA schema_version;") # execute test
+            
             # Show the Text box and Button only if the connection is successful
             inputtxt.pack()
             printButton.pack()
         except sqlite3.Error as e:
-            print(f"Error connecting to database: {e}")
+            messagebox.showerror("Error", f"Error connecting to database: {e}")
+            import_db()
 
 def execute_query():
     if sqlite:
         query = inputtxt.get(1.0, "end-1c")  
-        print("Executing query:", query)
         try:
             kursor.execute(query)
             sqlite.commit()
             print(kursor.fetchall())
         except sqlite3.Error as e:
-            print(f"Error executing query: {e}")
+             messagebox.showerror("Error", f"Error executing query: {e}")
 
 
 m = tkinter.Tk()
