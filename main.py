@@ -1,7 +1,30 @@
 import tkinter
 from tkinter import ttk
+from tkinter import filedialog
 
 import sqlite3
+
+
+def import_db():
+    # Open file dialog and allow the user to select a .db file
+    db_path = filedialog.askopenfilename(
+        title="Select a .db file",
+        filetypes=[("SQLite Database", "*.db")]
+    )
+    
+    if db_path:  
+        try:
+            # Connect to the SQLite database
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+            tables = cursor.fetchall()
+            
+            conn.close()
+        except sqlite3.Error as e:
+            print(f"Error connecting to database: {e}")
+
 
 m = tkinter.Tk()
 m.title("Sqlite test")
