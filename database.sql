@@ -3,8 +3,7 @@ CREATE TABLE Customers (
     FirstName VARCHAR(50) NOT NULL,
     LastName VARCHAR(50) NOT NULL,
     Email VARCHAR(100) UNIQUE NOT NULL,
-    PhoneNumber VARCHAR(15),
-    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    PhoneNumber VARCHAR(15)
 );
 
 CREATE TABLE Staff (
@@ -32,7 +31,6 @@ CREATE TABLE Ingredients (
     Name VARCHAR(100) NOT NULL,
     Unit VARCHAR(50) NOT NULL,
     SupplierID INTEGER,
-    PricePerUnit DECIMAL(10, 2) NOT NULL,
     StockQuantity INT DEFAULT 0,
     FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID) ON DELETE SET NULL
 );
@@ -122,12 +120,12 @@ INSERT INTO Suppliers (Name, ContactName, ContactEmail, PhoneNumber, Address) VA
 ('Seafood Delights', 'Diane Fisher', 'diane.fisher@example.com', '4564564567', '101 Ocean Ave, Seaside'),
 ('Bakery Goods Co.', 'Paul Baker', 'paul.baker@example.com', '5675675678', '202 Bread Blvd, Crustown');
 
-INSERT INTO Ingredients (Name, Unit, SupplierID, PricePerUnit, StockQuantity) VALUES
-('Tomatoes', 'kg', 1, 2.50, 100),
-('Beef', 'kg', 3, 15.00, 50),
-('Salmon', 'kg', 4, 20.00, 30),
-('Flour', 'kg', 5, 1.20, 200),
-('Cheese', 'kg', 1, 5.00, 75);
+INSERT INTO Ingredients (Name, Unit, SupplierID, StockQuantity) VALUES
+('Tomatoes', 'kg', 1, 100),
+('Beef', 'kg', 3, 50),
+('Salmon', 'kg', 4, 30),
+('Flour', 'kg', 5, 200),
+('Cheese', 'kg', 1, 75);
 
 INSERT INTO Menus (Name, Description) VALUES
 ('Breakfast Menu', 'Delicious breakfast options to start your day'),
