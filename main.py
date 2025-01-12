@@ -34,7 +34,7 @@ def switch_view(view):
             
 
 def import_db():
-    global sqlite, kursor, inputtxt, printButton
+    global sqlite, kursor, inputtxt, printButton, m
 
     db_path = filedialog.askopenfilename(
         title="Select a .db file",
@@ -48,6 +48,7 @@ def import_db():
             kursor.execute("PRAGMA schema_version;") # execute test
             
             # Show the Text box and Button only if the connection is successful
+            m.title("SQLite Database Manager - " + str(db_path))
             inputtxt.pack()
             printButton.pack()
         except sqlite3.Error as e:
@@ -66,7 +67,7 @@ def execute_query():
 
 
 m = tkinter.Tk()
-m.title("SQLite Test")
+m.title("SQLite Database Manager")
 m.geometry("1000x500")
 
 
@@ -74,6 +75,18 @@ menuBar = Menu(m)
 filemenu = Menu(menuBar, tearoff=0)
 filemenu.add_command(label="Open Database", command=import_db)
 menuBar.add_cascade(label="File", menu=filemenu)
+
+importmenu = Menu(menuBar, tearoff=0)
+importmenu.add_command(label="Database")
+importmenu.add_command(label="Table(s)")
+menuBar.add_cascade(label="Import", menu=importmenu)
+
+exportmenu = Menu(menuBar, tearoff=0)
+exportmenu.add_command(label="Database")
+menuBar.add_cascade(label="Export", menu=exportmenu)
+
+menuBar.add_cascade(label="View")
+
 m.config(menu=menuBar)
 
 
