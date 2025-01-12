@@ -1,4 +1,4 @@
 # TODO 
 
 rozwijamy baze danych:
-* Dodac wiecej Triggerow
+* Dodac wiecej Triggerow (obecnie 2)
