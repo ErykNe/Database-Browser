@@ -1,0 +1,6 @@
+CustomerID,FirstName,LastName,Email,PhoneNumber,CreatedAt
+1,John,Doe,john.doe@example.com,1234567890,2025-01-12 10:19:17
+2,Jane,Smith,jane.smith@example.com,9876543210,2025-01-12 10:19:17
+3,Alice,Johnson,alice.johnson@example.com,4567891230,2025-01-12 10:19:17
+4,Bob,Brown,bob.brown@example.com,6543217890,2025-01-12 10:19:17
+5,Charlie,Davis,charlie.davis@example.com,7891234560,2025-01-12 10:19:17
