@@ -179,6 +179,8 @@ VALUES
     (4,9.98,'Cash'),
     (5,44.97,'Cash');
 
+-------------------------------------------------------------------------------------
+
 CREATE TRIGGER after_insert_orders
 AFTER INSERT ON Orders
 FOR EACH ROW
@@ -194,6 +196,8 @@ BEGIN
     INSERT INTO Payments (OrderID, Amount, PaymentMethod)
     VALUES (NEW.OrderID, NEW.TotalAmount, NEW.PaymentMethod);
 END;
+
+-------------------------------------------------------------------------------------
 
 CREATE TRIGGER update_stock_quantity_after_order
 AFTER INSERT ON OrderDetails
@@ -213,3 +217,54 @@ BEGIN
           AND MenuIngredients.MenuItemID = NEW.MenuItemID
     );
 END;
+
+-------------------------------------------------------------------------------------
+
+CREATE VIEW OrdersSummary AS
+SELECT 
+    o.OrderID, 
+    c.FirstName || ' ' || c.LastName AS CustomerName, 
+    s.FirstName || ' ' || s.LastName AS StaffName, 
+    o.OrderDateTime, 
+    o.TotalAmount, 
+    o.PaymentMethod
+FROM 
+    Orders o
+LEFT JOIN 
+    Customers c ON o.CustomerID = c.CustomerID
+LEFT JOIN 
+    Staff s ON o.StaffID = s.StaffID;
+
+-------------------------------------------------------------------------------------
+
+CREATE VIEW IngredientStockLevels AS
+SELECT 
+    i.IngredientID, 
+    i.Name AS IngredientName, 
+    i.Unit, 
+    i.StockQuantity, 
+    s.Name AS SupplierName
+FROM 
+    Ingredients i
+LEFT JOIN 
+    Suppliers s ON i.SupplierID = s.SupplierID;
+
+-------------------------------------------------------------------------------------
+
+CREATE VIEW MenuItemsWithIngredients AS
+SELECT 
+    mi.MenuItemID, 
+    mi.Name AS MenuItemName, 
+    mi.Description AS MenuItemDescription, 
+    mi.Price, 
+    m.Name AS MenuName, 
+    i.Name AS IngredientName, 
+    mi2.Quantity
+FROM 
+    MenuItems mi
+JOIN 
+    Menus m ON mi.MenuID = m.MenuID
+JOIN 
+    MenuIngredients mi2 ON mi.MenuItemID = mi2.MenuItemID
+JOIN 
+    Ingredients i ON mi2.IngredientID = i.IngredientID;
