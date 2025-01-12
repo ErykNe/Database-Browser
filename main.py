@@ -1,15 +1,13 @@
 import tkinter
-from tkinter import ttk
-from tkinter import filedialog
-from tkinter import Menu
-
+from tkinter import filedialog, Menu
 import sqlite3
 
-sqlite = sqlite3.connect('db.db')
-
+sqlite = None  
+kursor = None  
 
 def import_db():
-    # Open file dialog and allow the user to select a .db file
+    global sqlite, kursor, inputtxt, printButton
+
     db_path = filedialog.askopenfilename(
         title="Select a .db file",
         filetypes=[("SQLite Database", "*.db")]
@@ -19,24 +17,40 @@ def import_db():
         try:
             # Connect to the SQLite database
             sqlite = sqlite3.connect(db_path)
-            if(sqlite):
-                print("Successfuly connected with database")
+            kursor = sqlite.cursor()
+            print("Successfully connected with the database")
+
+            # Show the Text box and Button only if the connection is successful
+            inputtxt.pack()
+            printButton.pack()
         except sqlite3.Error as e:
             print(f"Error connecting to database: {e}")
 
+def execute_query():
+    if sqlite:
+        query = inputtxt.get(1.0, "end-1c")  
+        print("Executing query:", query)
+        try:
+            kursor.execute(query)
+            sqlite.commit()
+            print(kursor.fetchall())
+        except sqlite3.Error as e:
+            print(f"Error executing query: {e}")
+
 
 m = tkinter.Tk()
-m.title("Sqlite test")
+m.title("SQLite Test")
 m.geometry("1000x500")
+
 
 navbar = Menu(m)
 filemenu = Menu(navbar, tearoff=0)
 filemenu.add_command(label="Open Database", command=import_db)
 navbar.add_cascade(label="File", menu=filemenu)
-
-
 m.config(menu=navbar)
-kursor = sqlite.cursor()
 
+
+inputtxt = tkinter.Text(m, height=5, width=50)
+printButton = tkinter.Button(m, text="Enter Query", command=execute_query)
 
 m.mainloop()
