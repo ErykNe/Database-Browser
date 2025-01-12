@@ -86,7 +86,7 @@ CREATE TABLE Orders (
     MenuID INTEGER,
     OrderDateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     TotalAmount DECIMAL(10, 2),
-    PaymentStatus VARCHAR(50) DEFAULT 'Pending',
+    PaymentMethod VARCHAR(50),
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE SET NULL,
     FOREIGN KEY (StaffID) REFERENCES Staff(StaffID) ON DELETE SET NULL
 );
@@ -176,13 +176,13 @@ INSERT INTO Reservations (CustomerID, ReservationDateTime, NumberOfGuests, Speci
 (4, '2025-01-14 07:30:00', 1, 'Quiet corner'),
 (5, '2025-01-14 18:00:00', 5, 'Anniversary celebration');
 
-INSERT INTO Orders (CustomerID, StaffID, TotalAmount, MenuID)
+INSERT INTO Orders (CustomerID, StaffID, TotalAmount, MenuID, PaymentMethod)
 VALUES 
-    (1, 1, 19.98, 2), 
-    (3, 3, 29.98, 3), 
-    (4, 4, 12.98, 4),
-    (5, 5, 9.98, 5), 
-    (1, 2, 44.97, 3);
+    (1, 1, 19.98, 2, 'Cash'), 
+    (3, 3, 29.98, 3, 'Card'), 
+    (4, 4, 12.98, 4, 'Card'),
+    (5, 5, 9.98, 5, 'Cash'), 
+    (1, 2, 44.97, 3, 'Cash');
 
 INSERT INTO OrderDetails (OrderID,MenuItemID,Quantity,Price)
 VALUES 
@@ -194,11 +194,11 @@ VALUES
 
 INSERT INTO Payments (OrderID,Amount,PaymentMethod)
 VALUES 
-    (1,19.98,'Pending'),
-    (2,29.98,'Pending'),
-    (3,12.98,'Pending'),
-    (4,9.98,'Pending'),
-    (5,44.97,'Pending');
+    (1,19.98,'Cash'),
+    (2,29.98,'Card'),
+    (3,12.98,'Card'),
+    (4,9.98,'Cash'),
+    (5,44.97,'Cash');
 
 CREATE TRIGGER after_insert_orders
 AFTER INSERT ON Orders
@@ -213,5 +213,5 @@ BEGIN
     );
     
     INSERT INTO Payments (OrderID, Amount, PaymentMethod)
-    VALUES (NEW.OrderID, NEW.TotalAmount, 'Pending');
+    VALUES (NEW.OrderID, NEW.TotalAmount, NEW.PaymentMethod);
 END;
