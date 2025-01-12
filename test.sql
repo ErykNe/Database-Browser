@@ -174,3 +174,11 @@ INSERT INTO Reservations (CustomerID, ReservationDateTime, NumberOfGuests, Speci
 (3, '2025-01-13 19:00:00', 3, 'Vegetarian menu'),
 (4, '2025-01-14 07:30:00', 1, 'Quiet corner'),
 (5, '2025-01-14 18:00:00', 5, 'Anniversary celebration');
+
+INSERT INTO Orders(OrderID,CustomerID,StaffID,OrderDateTime,TotalAmount) VALUES 
+(1,1,4,'2024-01-01',250.00), 
+(2,5,3,'2024-02-01',100.00),
+(3,3,2,'2024-01-03',50.00),
+(4,1,2,'2024-05-05',20.00),
+(5,4,5,'2024-09-07',70.00);
+
