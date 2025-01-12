@@ -83,6 +83,7 @@ CREATE TABLE Orders (
     OrderID INTEGER PRIMARY KEY,
     CustomerID INTEGER,
     StaffID INTEGER,
+    MenuID INTEGER,
     OrderDateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     TotalAmount DECIMAL(10, 2),
     PaymentStatus VARCHAR(50) DEFAULT 'Pending',
@@ -174,3 +175,27 @@ INSERT INTO Reservations (CustomerID, ReservationDateTime, NumberOfGuests, Speci
 (3, '2025-01-13 19:00:00', 3, 'Vegetarian menu'),
 (4, '2025-01-14 07:30:00', 1, 'Quiet corner'),
 (5, '2025-01-14 18:00:00', 5, 'Anniversary celebration');
+
+INSERT INTO Orders (CustomerID, StaffID, TotalAmount, MenuID)
+VALUES 
+    (1, 1, 19.98, 2), 
+    (3, 3, 29.98, 3), 
+    (4, 4, 12.98, 4),
+    (5, 5, 9.98, 5), 
+    (1, 2, 44.97, 3);
+
+CREATE TRIGGER after_insert_orders
+AFTER INSERT ON Orders
+FOR EACH ROW
+BEGIN
+    INSERT INTO OrderDetails (OrderID, MenuItemID, Quantity, Price)
+    VALUES (
+        NEW.OrderID,
+        NEW.MenuID,
+        CAST(NEW.TotalAmount / (SELECT Price FROM MenuItems WHERE MenuItemID = NEW.MenuID) AS INTEGER),
+        (SELECT Price FROM MenuItems WHERE MenuItemID = NEW.MenuID)
+    );
+    
+    INSERT INTO Payments (OrderID, Amount, PaymentMethod)
+    VALUES (NEW.OrderID, NEW.TotalAmount, 'Pending');
+END;
