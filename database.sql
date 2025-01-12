@@ -215,3 +215,22 @@ BEGIN
     INSERT INTO Payments (OrderID, Amount, PaymentMethod)
     VALUES (NEW.OrderID, NEW.TotalAmount, NEW.PaymentMethod);
 END;
+
+CREATE TRIGGER update_stock_quantity_after_order
+AFTER INSERT ON OrderDetails
+FOR EACH ROW
+BEGIN
+    UPDATE Ingredients
+    SET StockQuantity = StockQuantity - (
+        SELECT Quantity * NEW.Quantity
+        FROM MenuIngredients
+        WHERE MenuIngredients.IngredientID = Ingredients.IngredientID
+          AND MenuIngredients.MenuItemID = NEW.MenuItemID
+    )
+    WHERE EXISTS (
+        SELECT 1
+        FROM MenuIngredients
+        WHERE MenuIngredients.IngredientID = Ingredients.IngredientID
+          AND MenuIngredients.MenuItemID = NEW.MenuItemID
+    );
+END;
