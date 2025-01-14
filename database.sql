@@ -223,49 +223,49 @@ END;
 
 CREATE VIEW OrdersSummary AS
 SELECT 
-    o.OrderID, 
-    c.FirstName || ' ' || c.LastName AS CustomerName, 
-    s.FirstName || ' ' || s.LastName AS StaffName, 
-    o.OrderDateTime, 
-    o.TotalAmount, 
-    o.PaymentMethod
+    Orders.OrderID, 
+    Customers.FirstName || ' ' || Customers.LastName AS CustomerName, 
+    Staff.FirstName || ' ' || Staff.LastName AS StaffName, 
+    Orders.OrderDateTime, 
+    Orders.TotalAmount, 
+    Orders.PaymentMethod
 FROM 
-    Orders o
+    Orders
 LEFT JOIN 
-    Customers c ON o.CustomerID = c.CustomerID
+    Customers ON Orders.CustomerID = Customers.CustomerID
 LEFT JOIN 
-    Staff s ON o.StaffID = s.StaffID;
+    Staff ON Orders.StaffID = Staff.StaffID;
 
 -------------------------------------------------------------------------------------
 
 CREATE VIEW IngredientStockLevels AS
 SELECT 
-    i.IngredientID, 
-    i.Name AS IngredientName, 
-    i.Unit, 
-    i.StockQuantity, 
-    s.Name AS SupplierName
+    Ingredients.IngredientID, 
+    Ingredients.Name AS IngredientName, 
+    Ingredients.Unit, 
+    Ingredients.StockQuantity, 
+    Suppliers.Name AS SupplierName
 FROM 
-    Ingredients i
+    Ingredients
 LEFT JOIN 
-    Suppliers s ON i.SupplierID = s.SupplierID;
+    Suppliers ON Ingredients.SupplierID = Suppliers.SupplierID;
 
 -------------------------------------------------------------------------------------
 
 CREATE VIEW MenuItemsWithIngredients AS
 SELECT 
-    mi.MenuItemID, 
-    mi.Name AS MenuItemName, 
-    mi.Description AS MenuItemDescription, 
-    mi.Price, 
-    m.Name AS MenuName, 
-    i.Name AS IngredientName, 
-    mi2.Quantity
+    MenuItems.MenuItemID, 
+    MenuItems.Name AS MenuItemName, 
+    MenuItems.Description AS MenuItemDescription, 
+    MenuItems.Price, 
+    Menus.Name AS MenuName, 
+    Ingredients.Name AS IngredientName, 
+    MenuIngredients.Quantity
 FROM 
-    MenuItems mi
+    MenuItems
 JOIN 
-    Menus m ON mi.MenuID = m.MenuID
+    Menus ON MenuItems.MenuID = Menus.MenuID
 JOIN 
-    MenuIngredients mi2 ON mi.MenuItemID = mi2.MenuItemID
+    MenuIngredients ON MenuItems.MenuItemID = MenuIngredients.MenuItemID
 JOIN 
-    Ingredients i ON mi2.IngredientID = i.IngredientID;
+    Ingredients ON MenuIngredients.IngredientID = Ingredients.IngredientID;
