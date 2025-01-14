@@ -4,6 +4,8 @@ Maciek
 rozwijamy baze danych:
 * Dodac wiecej Triggerow (obecnie 2)
 * Popraw strukture view i triggerow
+* Dodaj table adress(dla staffa, customer i suplier)
+
 
 Eryk
 rozwoj aplikacji:
