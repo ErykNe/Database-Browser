@@ -9,7 +9,16 @@ import xml.etree.ElementTree as ET
 
 sqlite = None  
 kursor = None  
+'''
+def get_database_structure():
+    SELECT name, type
+    FROM sqlite_master
+    WHERE type='table';
 
+    PRAGMA table_info(Customers);
+
+    resizable list - to do with buttons and labels
+'''
 def switch_tables(event):
     global combo, sqlite, kursor, label_browse_data, label_treedata
     
@@ -54,19 +63,22 @@ def switch_tables(event):
     
 
 def switch_view(view):
-    global m, nav_db_struct, nav_browse_data, nav_sql, label_sql, label_browse_data
+    global m, nav_db_struct, nav_browse_data, nav_sql, label_sql, label_browse_data, label_db_struct
     match(view):
         case "1":
             nav_db_struct.config(bg=m.cget("bg"))
             nav_browse_data.config(bg='lightgray')
             nav_sql.config(bg='lightgray')
             
+            label_db_struct.pack(side='left', fill='both', expand=True)
             label_browse_data.pack_forget()
             label_sql.pack_forget()
         case "2":
             nav_db_struct.config(bg='lightgray')
             nav_browse_data.config(bg=m.cget("bg"))
             nav_sql.config(bg='lightgray')
+
+            label_db_struct.pack_forget()
             label_browse_data.pack(side='left', fill='both', expand=True)
             label_sql.pack_forget()
         case "3":    
@@ -74,6 +86,7 @@ def switch_view(view):
             nav_browse_data.config(bg='lightgray')
             nav_sql.config(bg=m.cget("bg"))
             
+            label_db_struct.pack_forget()
             label_browse_data.pack_forget()
             label_sql.pack(fill='x', pady=(2, 0))  # 2px margin above the frame
     
@@ -121,6 +134,7 @@ def import_db():
             printButton.pack()
             combo.pack(side='top', pady=0, padx=0, anchor='w')
             label_treedata.pack(side='top', padx=0, pady=0, fill='both', expand=True)
+            label_db_struct.config(bg='white')
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error connecting to database: {e}")
             import_db()
@@ -205,6 +219,10 @@ nav_sql = tkinter.Button(navbar, text="Execute SQL", borderwidth=0, relief="flat
 nav_sql.pack(side="left")
 
 label_sql = tkinter.Frame(m, padx=5, pady=5)
+
+label_db_struct = tkinter.Frame(m, padx=0, pady=0)
+label_db_struct.pack(side='left', fill='both', expand=True)
+
 label_browse_data = tkinter.Frame(m, padx=0, pady=0)
 label_treedata = tkinter.Frame(label_browse_data, bg="white", padx=0, pady=0)
 
