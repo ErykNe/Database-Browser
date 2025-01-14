@@ -11,7 +11,7 @@ sqlite = None
 kursor = None  
 
 def switch_tables(event):
-    global combo, sqlite, kursor, label_browse_data
+    global combo, sqlite, kursor, label_browse_data, label_treedata
     
     selection = combo.get()
     query = f"SELECT * FROM {selection}"
@@ -21,27 +21,16 @@ def switch_tables(event):
     
     print(columns)
     
-    children = label_browse_data.winfo_children()
+    children = label_treedata.winfo_children()
+    if len(children) > 2:
+        children[2].destroy() 
     
-    if len(children) > 1:
-        a = 0
-        for child in children:
-            if(a != 0):
-                child.destroy()
-            a+=1    
-    
-    h = tkinter.Scrollbar(label_browse_data, orient = 'horizontal')
-    h.pack(side = BOTTOM, fill = X)
-    v = tkinter.Scrollbar(label_browse_data)
-    v.pack(side = RIGHT, fill = Y)
 
-    tree = ttk.Treeview(label_browse_data,
+    tree = ttk.Treeview(label_treedata,
                  xscrollcommand = h.set, 
                  yscrollcommand = v.set)
     
     h.config(command=tree.xview)
-  
-
     v.config(command=tree.yview)
     
     tree["columns"] = columns
@@ -54,13 +43,14 @@ def switch_tables(event):
             max_lengths[i] = max(max_lengths[i], len(str(value))) 
     
     for i, col in enumerate(columns):
-        tree.heading(col, text=col)
+        tree.heading(col, text=col) 
         tree.column(col, width=max(max_lengths[i] * 10, 100), anchor="center")  
     
     for row in result:
         tree.insert('', 'end', values=row)
         
-    tree.pack()
+    tree.pack(padx=0, pady=0, anchor='w')
+
     
 
 def switch_view(view):
@@ -77,8 +67,7 @@ def switch_view(view):
             nav_db_struct.config(bg='lightgray')
             nav_browse_data.config(bg=m.cget("bg"))
             nav_sql.config(bg='lightgray')
-            label_browse_data.place(x=0)
-            label_browse_data.pack(side='left', fill='both')
+            label_browse_data.pack(side='left', fill='both', expand=True)
             label_sql.pack_forget()
         case "3":    
             nav_db_struct.config(bg='lightgray')
@@ -110,7 +99,7 @@ def create_db_from_sql(sql_file):
         
 
 def import_db():
-    global sqlite, kursor, inputtxt, printButton, combo, m
+    global sqlite, kursor, inputtxt, printButton, combo, m, label_treedata
 
     db_path = filedialog.askopenfilename(
         title="Select a .db file",
@@ -130,8 +119,8 @@ def import_db():
             
             inputtxt.pack()
             printButton.pack()
-            combo.place(x=0)
-            combo.pack(side='top')
+            combo.pack(side='top', pady=0, padx=0, anchor='w')
+            label_treedata.pack(side='top', padx=0, pady=0, fill='both', expand=True)
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error connecting to database: {e}")
             import_db()
@@ -216,8 +205,14 @@ nav_sql = tkinter.Button(navbar, text="Execute SQL", borderwidth=0, relief="flat
 nav_sql.pack(side="left")
 
 label_sql = tkinter.Frame(m, padx=5, pady=5)
-label_browse_data = tkinter.Frame(m, padx=5, pady=5)
-    
+label_browse_data = tkinter.Frame(m, padx=0, pady=0)
+label_treedata = tkinter.Frame(label_browse_data, bg="white", padx=0, pady=0)
+
+h = tkinter.Scrollbar(label_treedata, orient = 'horizontal')
+h.pack(side = BOTTOM, fill = X)
+v = tkinter.Scrollbar(label_treedata)
+v.pack(side = RIGHT, fill = Y)
+
 
 
 inputtxt = tkinter.Text(label_sql, height=5, width=50)
