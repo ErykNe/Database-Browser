@@ -96,6 +96,7 @@ CREATE TABLE Payments (
     PaymentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Amount DECIMAL(10, 2) NOT NULL,
     PaymentMethod VARCHAR(50) NOT NULL,
+    PaymentStatus ENUM('Pending', 'Completed', 'Failed') DEFAULT 'Pending',
     FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE CASCADE
 );
 
