@@ -23,7 +23,7 @@ CREATE TABLE Suppliers (
     ContactName VARCHAR(50),
     ContactEmail VARCHAR(100),
     PhoneNumber VARCHAR(15),
-    Address TEXT
+    Address VARCHAR(200)
 );
 
 CREATE TABLE Ingredients (
@@ -38,14 +38,14 @@ CREATE TABLE Ingredients (
 CREATE TABLE Menus (
     MenuID INTEGER PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
-    Description TEXT
+    Description VARCHAR(500)
 );
 
 CREATE TABLE MenuItems (
     MenuItemID INTEGER PRIMARY KEY,
     MenuID INTEGER NOT NULL,
     Name VARCHAR(100) NOT NULL,
-    Description TEXT,
+    Description VARCHAR(500),
     Price DECIMAL(10, 2) NOT NULL,
     FOREIGN KEY (MenuID) REFERENCES Menus(MenuID) ON DELETE CASCADE
 );
@@ -64,7 +64,7 @@ CREATE TABLE Reservations (
     CustomerID INTEGER NOT NULL,
     ReservationDateTime DATETIME NOT NULL,
     NumberOfGuests INTEGER NOT NULL,
-    SpecialRequests TEXT,
+    SpecialRequests VARCHAR(500),
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE CASCADE
 );
 
