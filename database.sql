@@ -1,11 +1,24 @@
+CREATE TABLE Addresses (
+    AddressID INTEGER PRIMARY KEY,
+    Street VARCHAR(200) NOT NULL,
+    City VARCHAR(100) NOT NULL,
+    State VARCHAR(100),
+    ZipCode VARCHAR(20),
+    Country VARCHAR(100) NOT NULL
+);
+
+-- Modified Customers table to include AddressID foreign key
 CREATE TABLE Customers (
     CustomerID INTEGER PRIMARY KEY,
     FirstName VARCHAR(50) NOT NULL,
     LastName VARCHAR(50) NOT NULL,
     Email VARCHAR(100) UNIQUE NOT NULL,
-    PhoneNumber VARCHAR(15)
+    PhoneNumber VARCHAR(15),
+    AddressID INTEGER,
+    FOREIGN KEY (AddressID) REFERENCES Addresses(AddressID) ON DELETE SET NULL
 );
 
+-- Modified Staff table to include AddressID foreign key
 CREATE TABLE Staff (
     StaffID INTEGER PRIMARY KEY,
     FirstName VARCHAR(50) NOT NULL,
@@ -14,16 +27,20 @@ CREATE TABLE Staff (
     Email VARCHAR(100) UNIQUE NOT NULL,
     PhoneNumber VARCHAR(15),
     Salary DECIMAL(10, 2) NOT NULL,
-    HireDate DATE NOT NULL
+    HireDate DATE NOT NULL,
+    AddressID INTEGER,
+    FOREIGN KEY (AddressID) REFERENCES Addresses(AddressID) ON DELETE SET NULL
 );
 
+-- Modified Suppliers table to include AddressID foreign key
 CREATE TABLE Suppliers (
     SupplierID INTEGER PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
     ContactName VARCHAR(50),
     ContactEmail VARCHAR(100),
     PhoneNumber VARCHAR(15),
-    Address VARCHAR(200)
+    AddressID INTEGER,
+    FOREIGN KEY (AddressID) REFERENCES Addresses(AddressID) ON DELETE SET NULL
 );
 
 CREATE TABLE Ingredients (
@@ -96,31 +113,53 @@ CREATE TABLE Payments (
     PaymentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Amount DECIMAL(10, 2) NOT NULL,
     PaymentMethod VARCHAR(50) NOT NULL,
-    PaymentStatus ENUM('Pending', 'Completed', 'Failed') DEFAULT 'Pending',
+    PaymentStatus TEXT DEFAULT 'Pending' CHECK (PaymentStatus IN ('Pending', 'Completed', 'Failed')),
     FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE CASCADE
 );
 
-INSERT INTO Customers (FirstName, LastName, Email, PhoneNumber) VALUES
-('John', 'Doe', 'john.doe@example.com', '1234567890'),
-('Jane', 'Smith', 'jane.smith@example.com', '9876543210'),
-('Alice', 'Johnson', 'alice.johnson@example.com', '4567891230'),
-('Bob', 'Brown', 'bob.brown@example.com', '6543217890'),
-('Charlie', 'Davis', 'charlie.davis@example.com', '7891234560');
+-- Inserting data into Addresses table
+INSERT INTO Addresses (Street, City, State, ZipCode, Country) VALUES
+('123 Elm Street', 'Springfield', 'IL', '62701', 'USA'),
+('456 Oak Avenue', 'Hometown', 'CA', '90210', 'USA'),
+('789 Pine Road', 'Cityville', 'NY', '10001', 'USA'),
+('101 Maple Lane', 'Seaside', 'FL', '33101', 'USA'),
+('202 Birch Blvd', 'Crustown', 'TX', '73301', 'USA'),
+('303 Cedar St', 'Greenville', 'SC', '29601', 'USA'),
+('404 Willow Way', 'Fairview', 'OR', '97024', 'USA'),
+('505 Aspen Ave', 'Lakeside', 'MI', '49116', 'USA'),
+('606 Redwood Rd', 'Hilltop', 'CO', '80021', 'USA'),
+('707 Fir Ln', 'Meadowbrook', 'PA', '19046', 'USA'),
+('808 Spruce Dr', 'Brookfield', 'CT', '06804', 'USA'),
+('909 Cypress Ct', 'Stonebridge', 'GA', '30024', 'USA'),
+('1010 Palm St', 'Palmview', 'FL', '33176', 'USA'),
+('1111 Pinewood Pl', 'Woodland', 'WA', '98674', 'USA'),
+('1212 Cherry Cir', 'Cherryville', 'NJ', '07002', 'USA');
 
-INSERT INTO Staff (FirstName, LastName, Role, Email, PhoneNumber, Salary, HireDate) VALUES
-('Emily', 'White', 'Manager', 'emily.white@example.com', '3216549870', 55000.00, '2022-01-15'),
-('Michael', 'Green', 'Chef', 'michael.green@example.com', '1597534862', 45000.00, '2022-03-01'),
-('Sarah', 'Black', 'Waiter', 'sarah.black@example.com', '7531598462', 30000.00, '2023-05-20'),
-('David', 'Wilson', 'Bartender', 'david.wilson@example.com', '9513574862', 25000.00, '2021-11-10'),
-('Laura', 'Taylor', 'Host', 'laura.taylor@example.com', '1594867532', 20000.00, '2023-07-05');
+-- Inserting data into Customers table with AddressID
+INSERT INTO Customers (FirstName, LastName, Email, PhoneNumber, AddressID) VALUES
+('John', 'Doe', 'john.doe@example.com', '1234567890', 1),
+('Jane', 'Smith', 'jane.smith@example.com', '9876543210', 2),
+('Alice', 'Johnson', 'alice.johnson@example.com', '4567891230', 3),
+('Bob', 'Brown', 'bob.brown@example.com', '6543217890', 4),
+('Charlie', 'Davis', 'charlie.davis@example.com', '7891234560', 5);
 
-INSERT INTO Suppliers (Name, ContactName, ContactEmail, PhoneNumber, Address) VALUES
-('Fresh Produce Co.', 'Tom Rogers', 'tom.rogers@example.com', '1231231234', '123 Farm Lane, Springfield'),
-('Beverage Distributors', 'Nancy Miles', 'nancy.miles@example.com', '2342342345', '456 Drink St, Hometown'),
-('Meat Suppliers Inc.', 'Gary Cook', 'gary.cook@example.com', '3453453456', '789 Meat Rd, Cityville'),
-('Seafood Delights', 'Diane Fisher', 'diane.fisher@example.com', '4564564567', '101 Ocean Ave, Seaside'),
-('Bakery Goods Co.', 'Paul Baker', 'paul.baker@example.com', '5675675678', '202 Bread Blvd, Crustown');
+-- Inserting data into Staff table with AddressID
+INSERT INTO Staff (FirstName, LastName, Role, Email, PhoneNumber, Salary, HireDate, AddressID) VALUES
+('Emily', 'White', 'Manager', 'emily.white@example.com', '3216549870', 55000.00, '2022-01-15', 6),
+('Michael', 'Green', 'Chef', 'michael.green@example.com', '1597534862', 45000.00, '2022-03-01', 7),
+('Sarah', 'Black', 'Waiter', 'sarah.black@example.com', '7531598462', 30000.00, '2023-05-20', 8),
+('David', 'Wilson', 'Bartender', 'david.wilson@example.com', '9513574862', 25000.00, '2021-11-10', 9),
+('Laura', 'Taylor', 'Host', 'laura.taylor@example.com', '1594867532', 20000.00, '2023-07-05', 10);
 
+-- Inserting data into Suppliers table with AddressID
+INSERT INTO Suppliers (Name, ContactName, ContactEmail, PhoneNumber, AddressID) VALUES
+('Fresh Produce Co.', 'Tom Rogers', 'tom.rogers@example.com', '1231231234', 1),
+('Beverage Distributors', 'Nancy Miles', 'nancy.miles@example.com', '2342342345', 2),
+('Meat Suppliers Inc.', 'Gary Cook', 'gary.cook@example.com', '3453453456', 3),
+('Seafood Delights', 'Diane Fisher', 'diane.fisher@example.com', '4564564567', 4),
+('Bakery Goods Co.', 'Paul Baker', 'paul.baker@example.com', '5675675678', 5);
+
+-- Inserting data into Ingredients table
 INSERT INTO Ingredients (Name, Unit, SupplierID, StockQuantity) VALUES
 ('Tomatoes', 'kg', 1, 100),
 ('Beef', 'kg', 3, 50),
@@ -128,6 +167,7 @@ INSERT INTO Ingredients (Name, Unit, SupplierID, StockQuantity) VALUES
 ('Flour', 'kg', 5, 200),
 ('Cheese', 'kg', 1, 75);
 
+-- Inserting data into Menus table
 INSERT INTO Menus (Name, Description) VALUES
 ('Breakfast Menu', 'Delicious breakfast options to start your day'),
 ('Lunch Menu', 'Tasty and satisfying lunch selections'),
@@ -135,6 +175,7 @@ INSERT INTO Menus (Name, Description) VALUES
 ('Kids Menu', 'Fun and delicious meals for kids'),
 ('Dessert Menu', 'Sweet treats to end your meal');
 
+-- Inserting data into MenuItems table
 INSERT INTO MenuItems (MenuID, Name, Description, Price) VALUES
 (1, 'Pancakes', 'Fluffy pancakes with syrup', 5.99),
 (2, 'Burger', 'Juicy beef burger with cheese', 9.99),
@@ -142,6 +183,7 @@ INSERT INTO MenuItems (MenuID, Name, Description, Price) VALUES
 (4, 'Chicken Nuggets', 'Crispy chicken nuggets', 6.49),
 (5, 'Chocolate Cake', 'Rich chocolate dessert', 4.99);
 
+-- Inserting data into MenuIngredients table
 INSERT INTO MenuIngredients (MenuItemID, IngredientID, Quantity) VALUES
 (1, 4, 0.2),
 (2, 2, 0.25),
@@ -149,6 +191,7 @@ INSERT INTO MenuIngredients (MenuItemID, IngredientID, Quantity) VALUES
 (4, 2, 0.15),
 (5, 5, 0.1);
 
+-- Inserting data into Reservations table
 INSERT INTO Reservations (CustomerID, ReservationDateTime, NumberOfGuests, SpecialRequests) VALUES
 (1, '2025-01-13 08:00:00', 2, 'Window seat'),
 (2, '2025-01-13 12:30:00', 4, 'Birthday party'),
@@ -156,29 +199,29 @@ INSERT INTO Reservations (CustomerID, ReservationDateTime, NumberOfGuests, Speci
 (4, '2025-01-14 07:30:00', 1, 'Quiet corner'),
 (5, '2025-01-14 18:00:00', 5, 'Anniversary celebration');
 
-INSERT INTO Orders (CustomerID, StaffID, TotalAmount, MenuID, PaymentMethod)
-VALUES 
-    (1, 1, 19.98, 2, 'Cash'), 
-    (3, 3, 29.98, 3, 'Card'), 
-    (4, 4, 12.98, 4, 'Card'),
-    (5, 5, 9.98, 5, 'Cash'), 
-    (1, 2, 44.97, 3, 'Cash');
+-- Inserting data into Orders table
+INSERT INTO Orders (CustomerID, StaffID, TotalAmount, MenuID, PaymentMethod) VALUES 
+(1, 1, 19.98, 2, 'Cash'), 
+(3, 3, 29.98, 3, 'Card'), 
+(4, 4, 12.98, 4, 'Card'),
+(5, 5, 9.98, 5, 'Cash'), 
+(1, 2, 44.97, 3, 'Cash');
 
-INSERT INTO OrderDetails (OrderID,MenuItemID,Quantity,Price)
-VALUES 
-    (1,2,2,9.99),
-    (2,3,2,14.99),
-    (3,4,2,6.49),
-    (4,5,2,4.99),
-    (5,3,3,14.99);
+-- Inserting data into OrderDetails table
+INSERT INTO OrderDetails (OrderID, MenuItemID, Quantity, Price) VALUES 
+(1, 2, 2, 9.99),
+(2, 3, 2, 14.99),
+(3, 4, 2, 6.49),
+(4, 5, 2, 4.99),
+(5, 3, 3, 14.99);
 
-INSERT INTO Payments (OrderID,Amount,PaymentMethod)
-VALUES 
-    (1,19.98,'Cash'),
-    (2,29.98,'Card'),
-    (3,12.98,'Card'),
-    (4,9.98,'Cash'),
-    (5,44.97,'Cash');
+-- Inserting data into Payments table
+INSERT INTO Payments (OrderID, Amount, PaymentMethod) VALUES 
+(1, 19.98, 'Cash'),
+(2, 29.98, 'Card'),
+(3, 12.98, 'Card'),
+(4, 9.98, 'Cash'),
+(5, 44.97, 'Cash');
 
 -------------------------------------------------------------------------------------
 
