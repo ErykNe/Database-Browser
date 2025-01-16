@@ -7,7 +7,8 @@ rozwijamy baze danych:
 
 Eryk
 rozwoj aplikacji:
-* naprawic slidery i ogolny wyglad databrowsera
-* dodac database structure
-* usprawnic i poprawic sekcje z SQL executorem
+* Zrobic wszystkie creatory w db_struct
+* Dodac import i export XML
+* Ulepszyc zakladke sql execute
+* Zrobic jakies podstawowe szyfrowanie danych
   
