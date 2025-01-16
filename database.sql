@@ -68,7 +68,7 @@ CREATE TABLE MenuItems (
 );
 
 CREATE TABLE MenuIngredients (
-    MenuItemID INTEGER NOT NULL,
+    MenuItemID INTEGER,
     IngredientID INTEGER NOT NULL,
     Quantity DECIMAL(10, 2) NOT NULL,
     PRIMARY KEY (MenuItemID, IngredientID),
@@ -92,7 +92,6 @@ CREATE TABLE Orders (
     MenuID INTEGER,
     OrderDateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     TotalAmount DECIMAL(10, 2),
-    PaymentMethod VARCHAR(50),
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE SET NULL,
     FOREIGN KEY (StaffID) REFERENCES Staff(StaffID) ON DELETE SET NULL
 );
@@ -137,17 +136,17 @@ INSERT INTO Addresses (Street, City, State, ZipCode, Country) VALUES
 
 -- Inserting data into Customers table with AddressID
 INSERT INTO Customers (FirstName, LastName, Email, PhoneNumber, AddressID) VALUES
-('John', 'Doe', 'john.doe@example.com', '1234567890', 1),
-('Jane', 'Smith', 'jane.smith@example.com', '9876543210', 2),
-('Alice', 'Johnson', 'alice.johnson@example.com', '4567891230', 3),
-('Bob', 'Brown', 'bob.brown@example.com', '6543217890', 4),
-('Charlie', 'Davis', 'charlie.davis@example.com', '7891234560', 5);
+('John', 'Doe', 'john@example.com', '1234567890', 1),
+('Jane', 'Smith', 'jane@example.com', '9876543210', 2),
+('Alice', 'Johnson', 'alice@example.com', '4567891230', 3),
+('Bob', 'White', 'bob@example.com', '6543217890', 4),
+('Carol', 'Davis', 'carol@example.com', '7891234560', 5);
 
 -- Inserting data into Staff table with AddressID
 INSERT INTO Staff (FirstName, LastName, Role, Email, PhoneNumber, Salary, HireDate, AddressID) VALUES
 ('Emily', 'White', 'Manager', 'emily.white@example.com', '3216549870', 55000.00, '2022-01-15', 6),
 ('Michael', 'Green', 'Chef', 'michael.green@example.com', '1597534862', 45000.00, '2022-03-01', 7),
-('Sarah', 'Black', 'Waiter', 'sarah.black@example.com', '7531598462', 30000.00, '2023-05-20', 8),
+('Thomas', 'Black', 'Waiter', 'sarah.black@example.com', '7531598462', 30000.00, '2023-05-20', 8),
 ('David', 'Wilson', 'Bartender', 'david.wilson@example.com', '9513574862', 25000.00, '2021-11-10', 9),
 ('Laura', 'Taylor', 'Host', 'laura.taylor@example.com', '1594867532', 20000.00, '2023-07-05', 10);
 
@@ -165,7 +164,7 @@ INSERT INTO Ingredients (Name, Unit, SupplierID, StockQuantity) VALUES
 ('Beef', 'kg', 3, 50),
 ('Salmon', 'kg', 4, 30),
 ('Flour', 'kg', 5, 200),
-('Cheese', 'kg', 1, 75);
+('Cheese', 'kg', 2, 75);
 
 -- Inserting data into Menus table
 INSERT INTO Menus (Name, Description) VALUES
@@ -177,19 +176,18 @@ INSERT INTO Menus (Name, Description) VALUES
 
 -- Inserting data into MenuItems table
 INSERT INTO MenuItems (MenuID, Name, Description, Price) VALUES
-(1, 'Pancakes', 'Fluffy pancakes with syrup', 5.99),
-(2, 'Burger', 'Juicy beef burger with cheese', 9.99),
-(3, 'Grilled Salmon', 'Fresh salmon with herbs', 14.99),
-(4, 'Chicken Nuggets', 'Crispy chicken nuggets', 6.49),
-(5, 'Chocolate Cake', 'Rich chocolate dessert', 4.99);
+(1,'Pancakes', 'Fluffy pancakes with syrup', 5.99),
+(2,'Burger', 'Juicy beef burger with cheese', 9.99),
+(3,'Grilled Salmon', 'Fresh salmon with herbs', 14.99),
+(4,'Chicken Nuggets', 'Crispy chicken nuggets', 6.49),
+(5,'Chocolate Cake', 'Rich chocolate dessert', 4.99);
 
--- Inserting data into MenuIngredients table
-INSERT INTO MenuIngredients (MenuItemID, IngredientID, Quantity) VALUES
-(1, 4, 0.2),
-(2, 2, 0.25),
-(3, 3, 0.3),
-(4, 2, 0.15),
-(5, 5, 0.1);
+INSERT INTO MenuIngredients (IngredientID, Quantity) VALUES
+(4, 0.2),
+(2, 0.25),
+(3, 0.3),
+(2, 0.15),
+(5, 0.1);
 
 -- Inserting data into Reservations table
 INSERT INTO Reservations (CustomerID, ReservationDateTime, NumberOfGuests, SpecialRequests) VALUES
@@ -200,12 +198,12 @@ INSERT INTO Reservations (CustomerID, ReservationDateTime, NumberOfGuests, Speci
 (5, '2025-01-14 18:00:00', 5, 'Anniversary celebration');
 
 -- Inserting data into Orders table
-INSERT INTO Orders (CustomerID, StaffID, TotalAmount, MenuID, PaymentMethod) VALUES 
-(1, 1, 19.98, 2, 'Cash'), 
-(3, 3, 29.98, 3, 'Card'), 
-(4, 4, 12.98, 4, 'Card'),
-(5, 5, 9.98, 5, 'Cash'), 
-(1, 2, 44.97, 3, 'Cash');
+INSERT INTO Orders (CustomerID, StaffID, MenuID, TotalAmount) VALUES 
+(1, 1, 2, 19.98), 
+(3, 3, 3, 29.98), 
+(4, 4, 4, 12.98),
+(5, 5, 5,  9.98), 
+(1, 2, 3, 44.97);
 
 -- Inserting data into OrderDetails table
 INSERT INTO OrderDetails (OrderID, MenuItemID, Quantity, Price) VALUES 
