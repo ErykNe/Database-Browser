@@ -9,16 +9,38 @@ import xml.etree.ElementTree as ET
 
 sqlite = None  
 kursor = None  
-'''
+
 def get_database_structure():
-    SELECT name, type
-    FROM sqlite_master
-    WHERE type='table';
+    global sqlite, kursor, label_db_struct
+    
+    
+    tree = ttk.Treeview(label_db_struct)
+    tree.pack(expand=True, fill="both")
+    
+    tree["columns"] = ["Type", "Schema"]
+    tree.heading("#0", text="Name")
+    tree.heading("Type", text="Type")
+    tree.heading("Schema", text="Schema")
 
-    PRAGMA table_info(Customers);
+    
+    root_node = tree.insert("", "end", text="Database", open=True)
 
-    resizable list - to do with buttons and labels
-'''
+    query_table_names = "SELECT name, type, sql FROM sqlite_master WHERE type='table'"
+    tables = sqlite.execute(query_table_names).fetchall()
+    
+    print(tables)
+    
+    for table in tables:
+        name = str(table[0])
+        schema = str(table[2]).replace("\n", "")
+        child_1 = tree.insert(root_node, "end", text=name, open=False, values=("", schema))
+        query_pragma = f"PRAGMA table_info({name});"
+        table_struct = sqlite.execute(query_pragma).fetchall()
+        for struct in table_struct:
+            tree.insert(child_1, "end", text=str(struct[1]), values=(str(struct[2]), ""))
+        
+        
+
 def switch_tables(event):
     global combo, sqlite, kursor, label_browse_data, label_treedata
     
@@ -135,6 +157,7 @@ def import_db():
             combo.pack(side='top', pady=0, padx=0, anchor='w')
             label_treedata.pack(side='top', padx=0, pady=0, fill='both', expand=True)
             label_db_struct.config(bg='white')
+            get_database_structure()
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error connecting to database: {e}")
             import_db()
