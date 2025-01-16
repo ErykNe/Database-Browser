@@ -1,3 +1,4 @@
+import csv
 import os
 import tkinter
 from tkinter import filedialog, Menu
@@ -5,11 +6,83 @@ from tkinter import messagebox
 from tkinter import *
 from tkinter import ttk
 import sqlite3
+from tkinter import simpledialog
 import xml.etree.ElementTree as ET
 
 sqlite = None  
 kursor = None  
 
+def create_table():
+    create_window = Toplevel(m)
+    create_window.title("Create Table")
+    create_window.geometry("700x500")
+    
+
+    Label(create_window, text="Table Name: ").grid(row=0, column=0)
+    delimiter_var = StringVar(value="name")
+    delimiter_entry = Entry(create_window, textvariable=delimiter_var)
+    delimiter_entry.grid(row=0, column=1)
+    
+    columns = ('Name', 'Type', 'NN', 'PK', 'AI', 'Default')
+    tree = ttk.Treeview(create_window, columns=columns, show='headings')
+    for col in columns:
+        tree.heading(col, text=col)
+        tree.column(col, width=100)
+
+    # Always visible widgets setup
+    widget_refs = []
+
+    def add_row():
+        row_id = tree.insert('', 'end', values=["" for _ in columns])
+        row_widgets = []
+        for col_index, col_name in enumerate(columns):
+            x, y, width, height = tree.bbox(row_id, f"#{col_index+1}")
+
+            if col_name == 'Type':
+                var = StringVar()
+                widget = ttk.Combobox(create_window, textvariable=var, values=["INTEGER", "TEXT", "BLOB", "REAL", "NUMERIC"])
+            elif col_name in ['NN', 'PK', 'AI']:
+                var = BooleanVar()
+                widget = Checkbutton(create_window, variable=var)
+            else:
+                var = StringVar()
+                widget = Entry(create_window, textvariable=var)
+
+            widget.place(x=x + tree.winfo_rootx() - create_window.winfo_rootx(),
+                         y=y + tree.winfo_rooty() - create_window.winfo_rooty(),
+                         width=width, height=height)
+
+            row_widgets.append(widget)
+
+        widget_refs.append((row_id, row_widgets))
+
+    def remove_row():
+        selected_item = tree.selection()
+        if selected_item:
+            tree.delete(selected_item)
+            for idx, (rid, widgets) in enumerate(widget_refs):
+                if rid == selected_item:
+                    for widget in widgets:
+                        widget.destroy()
+                    widget_refs.pop(idx)
+                    break
+        elif tree.get_children():
+            last_item = tree.get_children()[-1]
+            tree.delete(last_item)
+            rid, widgets = widget_refs.pop()
+            for widget in widgets:
+                widget.destroy()
+
+    Button(create_window, text="Add Row", command=add_row).grid(row=1, column=0)
+    Button(create_window, text="Remove Row", command=remove_row).grid(row=1, column=1)
+    
+    tree.grid(row=2, column=0, columnspan=6)
+    
+    Button(create_window, text="Create table").grid(row=3, column=0) # add command to create table in database
+        
+
+    
+    
 
 def get_database_structure():
     global sqlite, kursor, label_db_struct
@@ -38,7 +111,8 @@ def get_database_structure():
     table_node = tree.insert("", "end", text="Tables", open=True)
 
     query_table_names = "SELECT name, type, sql FROM sqlite_master WHERE type='table'"
-    tables = sqlite.execute(query_table_names).fetchall()
+    tables = kursor.execute(query_table_names).fetchall()
+    sqlite.commit()
     
     
     for table in tables:
@@ -50,7 +124,8 @@ def get_database_structure():
         
         child_1 = tree.insert(table_node, "end", text=name, open=False, values=("", schema))
         query_pragma = f"PRAGMA table_info({name});"
-        table_struct = sqlite.execute(query_pragma).fetchall()
+        table_struct = kursor.execute(query_pragma).fetchall()
+        sqlite.commit()
         for struct in table_struct:
             result = f'"{struct[1]}" {struct[2]} {"NOT NULL " if struct[3] == 1 else ""} {"PRIMARY KEY" if struct[5] == 1 else ""}'
             child_2 = tree.insert(child_1, "end", text=str(struct[1]), values=(str(struct[2]), result))
@@ -61,7 +136,8 @@ def get_database_structure():
     view_node = tree.insert("", "end", text="Views", open=True)
     
     query_view_names = "SELECT name, type, sql FROM sqlite_master WHERE type='view'"
-    views = sqlite.execute(query_view_names).fetchall()
+    views = kursor.execute(query_view_names).fetchall()
+    sqlite.commit()
     
     for view in views:
         name = str(view[0])
@@ -72,7 +148,8 @@ def get_database_structure():
             
         child_1 = tree.insert(view_node, "end", text=name, open=False, values=("", schema))
         query_pragma = f"PRAGMA table_info({name});"
-        table_struct = sqlite.execute(query_pragma).fetchall()
+        table_struct = kursor.execute(query_pragma).fetchall()
+        sqlite.commit()
         for struct in table_struct:
             result = f'"{struct[1]}" {struct[2]} {"NOT NULL " if struct[3] == 1 else ""} {"PRIMARY KEY" if struct[5] == 1 else ""}'
             tree.insert(child_1, "end", text=str(struct[1]), values=(str(struct[2]), result))
@@ -80,7 +157,8 @@ def get_database_structure():
     trigger_node = tree.insert("", "end", text="Triggers", open=True)
     
     query_triggers_names = "SELECT name, type, sql FROM sqlite_master WHERE type='trigger'"
-    triggers = sqlite.execute(query_triggers_names).fetchall()   
+    triggers = kursor.execute(query_triggers_names).fetchall()   
+    sqlite.commit()
     
     for trigger in triggers:
         name = str(trigger[0])
@@ -104,7 +182,7 @@ def get_database_structure():
         if selected_item == table_node:
             tree.selection_set(selected_item)
             menu = tkinter.Menu(m, tearoff=0)
-            menu.add_command(label="Add Table")
+            menu.add_command(label="Add Table", command=create_table)
             menu.post(event.x_root, event.y_root)
         if selected_item == view_node:
             tree.selection_set(selected_item)
@@ -128,9 +206,13 @@ def switch_tables(event):
     selection = combo.get()
     query = f"SELECT * FROM {selection}"
     
-    result = sqlite.execute(query).fetchall()
-    columns = [description[1] for description in sqlite.execute(f"PRAGMA table_info({selection})").fetchall()]
-    
+    result = kursor.execute(query).fetchall()
+    sqlite.commit()
+    columns = [description[1] for description in kursor.execute(f"PRAGMA table_info({selection})").fetchall()]
+    sqlite.commit(
+        
+        
+    )
     print(columns)
     
     children = label_treedata.winfo_children()
@@ -156,7 +238,7 @@ def switch_tables(event):
     
     for i, col in enumerate(columns):
         tree.heading(col, text=col) 
-        tree.column(col, width=max(max_lengths[i] * 10, 100), anchor="center")  
+        tree.column(col, width=max(max_lengths[i] * 10, 100), anchor="center", stretch=False)  
     
     for row in result:
         tree.insert('', 'end', values=row)
@@ -215,16 +297,18 @@ def create_db_from_sql(sql_file):
         
 
 def import_db():
-    global sqlite, kursor, inputtxt, printButton, combo, m, label_treedata
+    global sqlite, kursor, inputtxt, outputtxt, printButton, combo, m, label_treedata
 
     db_path = filedialog.askopenfilename(
         title="Select a .db file",
         filetypes=[("SQLite Database", "*.db")]
     )
     
+    os.chmod(db_path, 0o666)
+    
     if db_path:  
         try:
-            sqlite = sqlite3.connect(db_path)
+            sqlite = sqlite3.connect(db_path, check_same_thread=False, uri=True)
             kursor = sqlite.cursor()
             result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [str(table[0]) for table in result.fetchall()]
@@ -233,8 +317,9 @@ def import_db():
             combo.config(values=tables)
             m.title("SQLite Database Manager - " + str(db_path))
             
-            inputtxt.pack()
-            printButton.pack()
+            printButton.pack(side='top', anchor='w')
+            inputtxt.pack(side='top', padx=0, pady=0, anchor='w')
+            outputtxt.pack(side='top', pady=5, anchor='w', fill='y')
             combo.pack(side='top', pady=0, padx=0, anchor='w')
             label_treedata.pack(side='top', padx=0, pady=0, fill='both', expand=True)
             label_db_struct.config(bg='white')
@@ -245,6 +330,75 @@ def import_db():
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error connecting to database: {e}")
             import_db()
+
+def import_table_from_csv():
+    global sqlite, kursor, inputtxt, outputtxt, printButton, combo, m, label_treedata
+
+    db_path = filedialog.askopenfilename(
+        title="Select a .csv file",
+        filetypes=[("Comma-Separated Values Files", "*.csv")]
+    )  
+    if db_path:  
+        import_window = Toplevel(m)
+        import_window.title("Import CSV Options")
+
+        Label(import_window, text="Delimiter: ").grid(row=0, column=0)
+        delimiter_var = StringVar(value=",")
+        delimiter_entry = Entry(import_window, textvariable=delimiter_var)
+        delimiter_entry.grid(row=0, column=1)
+
+        Label(import_window, text="Quote Character: ").grid(row=1, column=0)
+        quote_char_var = StringVar(value='"')
+        quote_char_entry = Entry(import_window, textvariable=quote_char_var)
+        quote_char_entry.grid(row=1, column=1)
+
+        Label(import_window, text="Encoding: ").grid(row=2, column=0)
+        encoding_var = StringVar(value="UTF-8")
+        encoding_entry = Entry(import_window, textvariable=encoding_var)
+        encoding_entry.grid(row=2, column=1)
+
+        header_var = BooleanVar(value=True)
+        header_check = Checkbutton(import_window, text="Column names in first row", variable=header_var)
+        header_check.grid(row=3, columnspan=2)
+
+        def start_import():
+            table_name = os.path.splitext(os.path.basename(db_path))[0]
+            try:
+                with open(db_path, 'r', encoding=encoding_var.get()) as f:
+                    reader = csv.reader(f, delimiter=delimiter_var.get(), quotechar=quote_char_var.get())
+
+                    if header_var.get():
+                        headers = next(reader)
+                        columns = ', '.join([f'"{header}" TEXT' for header in headers])
+                        kursor.execute(f'CREATE TABLE IF NOT EXISTS "{table_name}" ({columns});')
+                    else:
+                        headers = [f"Column{i+1}" for i in range(len(next(reader)))]
+                        columns = ', '.join([f'"{header}" TEXT' for header in headers])
+                        kursor.execute(f'CREATE TABLE IF NOT EXISTS "{table_name}" ({columns});')
+                        f.seek(0)
+
+                    for row in reader:
+                        placeholders = ', '.join(['?'] * len(row))
+                        kursor.execute(f'INSERT INTO "{table_name}" VALUES ({placeholders});', row)
+
+                    sqlite.commit()
+                    messagebox.showinfo("Success", f"Data imported into table '{table_name}'.")
+                    
+                    # Update the table list in the combobox
+                    combo['values'] = [table_name] + list(combo['values'])
+                    combo.set(table_name)
+            
+                    # Update the database structure
+                    get_database_structure()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Error importing CSV data: {e}")
+
+            import_window.destroy()
+
+        Button(import_window, text="Import", command=start_import).grid(row=4, columnspan=2)
+
+
             
 def import_db_from_sql():    
     global sqlite, kursor, inputtxt, printButton, m
@@ -269,23 +423,34 @@ def import_db_from_sql():
             messagebox.showerror("Error", f"Error connecting to database: {e}")
             import_db_from_sql()       
 
-                        
-     
-
 def execute_query():
     if sqlite:
         query = inputtxt.get(1.0, "end-1c")  
         try:
             kursor.execute(query)
             sqlite.commit()
-            print(kursor.fetchall())
+            result = kursor.fetchall()
+            if result:
+                outputtxt.config(state='normal')
+                outputtxt.delete(1.0, "end")
+                outputtxt.insert("insert",f"Execution finished without errors.\nResult:{result}\nAt line 1:\n{query}\n")
+                outputtxt.config(state='disabled')
+            else:
+                outputtxt.config(state='normal')
+                outputtxt.delete(1.0, "end")
+                outputtxt.insert("insert",f"Execution finished without errors.\nAt line 1:\n{query}\n")
+                outputtxt.config(state='disabled')
         except sqlite3.Error as e:
-             messagebox.showerror("Error", f"Error executing query: {e}")
+            messagebox.showerror("Error", f"Error executing query: {e}")
+            outputtxt.config(state='normal')
+            outputtxt.delete(1.0, "end")
+            outputtxt.config(state='disabled')
 
 
 m = tkinter.Tk()
 m.title("SQLite Database Manager")
 m.geometry("1000x500")
+m.resizable(False, False)
 
 
 menuBar = Menu(m)
@@ -300,7 +465,10 @@ database_submenu.add_command(label="From SQL File", command=import_db_from_sql)
 
 importmenu.add_cascade(label="Database", menu=database_submenu)
 
-importmenu.add_command(label="Table(s)")
+table_submenu = Menu(importmenu, tearoff=0)
+table_submenu.add_command(label="From CSV File", command=import_table_from_csv)
+
+importmenu.add_cascade(label="Table(s)", menu=table_submenu)
 menuBar.add_cascade(label="Import", menu=importmenu)
 
 exportmenu = Menu(menuBar, tearoff=0)
@@ -325,7 +493,7 @@ nav_browse_data.pack(side="left")
 nav_sql = tkinter.Button(navbar, text="Execute SQL", borderwidth=0, relief="flat", bg='lightgray', command=lambda: switch_view("3"))
 nav_sql.pack(side="left")
 
-label_sql = tkinter.Frame(m, padx=5, pady=5)
+label_sql = tkinter.Frame(m, padx=0, pady=0)
 
 label_db_struct = tkinter.Frame(m, padx=0, pady=0)
 label_db_struct.pack(side='left', fill='both', expand=True)
@@ -346,7 +514,8 @@ v2.pack(side = RIGHT, fill = Y)
 
 
 inputtxt = tkinter.Text(label_sql, height=5, width=50)
-printButton = tkinter.Button(label_sql, text="Enter Query", command=execute_query)
+outputtxt = tkinter.Text(label_sql, width=50)
+printButton = tkinter.Button(label_sql, text="Execute Query", command=execute_query)
 
 combo = ttk.Combobox(
     label_browse_data,
