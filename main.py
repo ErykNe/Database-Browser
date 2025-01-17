@@ -83,14 +83,14 @@ def create_table():
         query = f"CREATE TABLE {delimiter_entry.get()} ("
 
         for variables in variables_refs:
-            column_name = variables[0].get()
-            column_type = variables[1].get()
+            column_name = variables[0].get().strip()
+            column_type = variables[1].get().strip()
             is_nn = "NOT NULL" if variables[2].get() == 1 else ""
-            is_pk = f", PRIMARY KEY ({column_name})" if variables[3].get() == 1 else ""
-            is_ai = "AUTO_INCREMENT" if variables[4].get() == 1 else ""
+            is_pk = "PRIMARY KEY" if variables[3].get() == 1 else ""
+            is_ai = "AUTOINCREMENT" if variables[4].get() == 1 and variables[3].get() != 1 else ""
             default_value = f"DEFAULT '{variables[5].get()}'" if variables[5].get() != "" else ""
 
-            column_definition = f"{column_name} {column_type} {is_nn} {is_ai} {default_value} {is_pk}".strip()
+            column_definition = f"{column_name} {column_type} {is_nn} {is_pk} {is_ai} {default_value}".strip()
 
             query += column_definition + ", "
 
@@ -100,11 +100,11 @@ def create_table():
         try:
             kursor.execute(query)
             sqlite.commit()
-            messagebox.showinfo("Success", f"Data imported into table '{delimiter_entry.get()}'.")
+            messagebox.showinfo("Success", f"Successfully created table '{delimiter_entry.get()}'.")
             combo['values'] = [delimiter_entry.get()] + list(combo['values'])
             combo.set(delimiter_entry.get())
-            get_database_structure()
             create_window.destroy()
+            get_database_structure()
         except sqlite3.Error as e:
             messagebox.showerror("Error",f"Error creating table: {e}")
             
@@ -334,7 +334,7 @@ def create_db_from_sql(sql_file):
         
 
 def import_db():
-    global sqlite, kursor, inputtxt, outputtxt, printButton, combo, m, label_treedata
+    global sqlite, kursor, inputtxt, outputtxt, printButton, combo, m, label_treedata, result_label, top_frame
 
     db_path = filedialog.askopenfilename(
         title="Select a .db file",
@@ -355,8 +355,24 @@ def import_db():
             m.title("SQLite Database Manager - " + str(db_path))
             
             printButton.pack(side='top', anchor='w')
-            inputtxt.pack(side='top', padx=0, pady=0, anchor='w')
+
+            top_frame.pack(side='top', padx=0, pady=0, anchor='w', fill='x')
+
+            top_frame.grid_rowconfigure(0, weight=1)  # Allow the row to stretch horizontally
+            top_frame.grid_columnconfigure(0, weight=1)  # Allow the first column to stretch horizontally
+            top_frame.grid_columnconfigure(1, weight=1)  # Allow the second column to stretch horizontally
+
+            # Use grid to place inputtxt and result_label next to each other
+            inputtxt.grid(row=0, column=0, sticky='nsew')  # 'ew' stretches inputtxt horizontally
+            result_label.grid(row=0, column=1, sticky='nsew')  # 'ew' stretches result_label horizontally
+            children = result_label.winfo_children()
+            if len(children) > 0:
+                children[0].destroy()
+
+            tree = ttk.Treeview(result_label, xscrollcommand=h1.set, yscrollcommand=v1.set)
+            tree.pack()
             outputtxt.pack(side='top', pady=5, anchor='w', fill='y')
+
             combo.pack(side='top', pady=0, padx=0, anchor='w')
             label_treedata.pack(side='top', padx=0, pady=0, fill='both', expand=True)
             label_db_struct.config(bg='white')
@@ -461,17 +477,45 @@ def import_db_from_sql():
             import_db_from_sql()       
 
 def execute_query():
+    global h3, v3
     if sqlite:
         query = inputtxt.get(1.0, "end-1c")  
         try:
             kursor.execute(query)
             sqlite.commit()
             result = kursor.fetchall()
+
             if result:
                 outputtxt.config(state='normal')
                 outputtxt.delete(1.0, "end")
-                outputtxt.insert("insert",f"Execution finished without errors.\nResult:{result}\nAt line 1:\n{query}\n")
+                outputtxt.insert("insert", f"Execution finished without errors.\nResult:\n{query}\n")
                 outputtxt.config(state='disabled')
+
+                # Clear existing Treeview if any
+                children = result_label.winfo_children()
+                if len(children) > 0:
+                    children[0].destroy()
+
+                # Create Treeview widget
+                tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
+
+                tree["show"] = "headings"
+
+                # Set column headers based on the result
+                columns = [desc[0] for desc in kursor.description]  # Get column names from cursor description
+                tree["columns"] = columns
+
+                # Set column headings and column widths
+                for col in columns:
+                    tree.heading(col, text=col, anchor="center")
+                    tree.column(col, width=100, anchor="center", stretch=False)
+
+                # Insert the rows into the Treeview
+                for row in result:
+                    tree.insert('', 'end', values=row)
+
+                # Pack the Treeview widget
+                tree.pack(padx=0, pady=0, anchor='w', fill='x')
             else:
                 outputtxt.config(state='normal')
                 outputtxt.delete(1.0, "end")
@@ -549,9 +593,17 @@ v2 = tkinter.Scrollbar(label_db_struct)
 v2.pack(side = RIGHT, fill = Y)
 
 
+top_frame = tkinter.Frame(label_sql)
 
-inputtxt = tkinter.Text(label_sql, height=5, width=50)
+inputtxt = tkinter.Text(top_frame, height=5, width=50)
 outputtxt = tkinter.Text(label_sql, width=50)
+result_label = tkinter.Frame(top_frame, width=50, height=5, bg='white')
+
+h3 = tkinter.Scrollbar(result_label, orient = 'horizontal')
+h3.pack(side = BOTTOM, fill = X)
+v3 = tkinter.Scrollbar(result_label)
+v3.pack(side = RIGHT, fill = Y)
+
 printButton = tkinter.Button(label_sql, text="Execute Query", command=execute_query)
 
 combo = ttk.Combobox(
