@@ -31,10 +31,12 @@ def create_table():
 
     # Always visible widgets setup
     widget_refs = []
+    variables_refs = []
 
     def add_row():
         row_id = tree.insert('', 'end', values=["" for _ in columns])
         row_widgets = []
+        variables = []
         for col_index, col_name in enumerate(columns):
             x, y, width, height = tree.bbox(row_id, f"#{col_index+1}")
 
@@ -53,8 +55,10 @@ def create_table():
                          width=width, height=height)
 
             row_widgets.append(widget)
+            variables.append(var)
 
-        widget_refs.append((row_id, row_widgets))
+        widget_refs.append((row_widgets))
+        variables_refs.append(variables)
 
     def remove_row():
         selected_item = tree.selection()
@@ -73,12 +77,45 @@ def create_table():
             for widget in widgets:
                 widget.destroy()
 
+    def execute_create_table_query():
+        print(widget_refs)
+        print(variables_refs)
+        query = f"CREATE TABLE {delimiter_entry.get()} ("
+
+        for variables in variables_refs:
+            column_name = variables[0].get()
+            column_type = variables[1].get()
+            is_nn = "NOT NULL" if variables[2].get() == 1 else ""
+            is_pk = f", PRIMARY KEY ({column_name})" if variables[3].get() == 1 else ""
+            is_ai = "AUTO_INCREMENT" if variables[4].get() == 1 else ""
+            default_value = f"DEFAULT '{variables[5].get()}'" if variables[5].get() != "" else ""
+
+            column_definition = f"{column_name} {column_type} {is_nn} {is_ai} {default_value} {is_pk}".strip()
+
+            query += column_definition + ", "
+
+        query = query.rstrip(", ") + ");"
+
+        print(query)
+        try:
+            kursor.execute(query)
+            sqlite.commit()
+            messagebox.showinfo("Success", f"Data imported into table '{delimiter_entry.get()}'.")
+            combo['values'] = [delimiter_entry.get()] + list(combo['values'])
+            combo.set(delimiter_entry.get())
+            get_database_structure()
+            create_window.destroy()
+        except sqlite3.Error as e:
+            messagebox.showerror("Error",f"Error creating table: {e}")
+            
+
+
     Button(create_window, text="Add Row", command=add_row).grid(row=1, column=0)
     Button(create_window, text="Remove Row", command=remove_row).grid(row=1, column=1)
     
     tree.grid(row=2, column=0, columnspan=6)
     
-    Button(create_window, text="Create table").grid(row=3, column=0) # add command to create table in database
+    Button(create_window, text="Create table", command=execute_create_table_query).grid(row=3, column=0) # add command to create table in database
         
 
     
