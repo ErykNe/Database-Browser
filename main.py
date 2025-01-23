@@ -15,13 +15,14 @@ kursor = None
 def create_table():
     create_window = Toplevel(m)
     create_window.title("Create Table")
-    create_window.geometry("700x500")
+    create_window.geometry("700x325")
     
 
-    Label(create_window, text="Table Name: ").grid(row=0, column=0)
+    label_frame = LabelFrame(create_window, text="Table Name: ")
+    label_frame.pack(fill='x')
     delimiter_var = StringVar(value="name")
-    delimiter_entry = Entry(create_window, textvariable=delimiter_var)
-    delimiter_entry.grid(row=0, column=1)
+    delimiter_entry = Entry(label_frame, textvariable=delimiter_var)
+    delimiter_entry.pack(side='top', anchor='w', padx=10, pady=10)
     
     columns = ('Name', 'Type', 'NN', 'PK', 'AI', 'Default')
     tree = ttk.Treeview(create_window, columns=columns, show='headings')
@@ -64,16 +65,18 @@ def create_table():
         selected_item = tree.selection()
         if selected_item:
             tree.delete(selected_item)
-            for idx, (rid, widgets) in enumerate(widget_refs):
-                if rid == selected_item:
+            for idx, widgets in enumerate(widget_refs):  # No unpacking of `rid`
+                if tree.get_children()[idx] == selected_item[0]:  # Match by treeview item ID
                     for widget in widgets:
                         widget.destroy()
                     widget_refs.pop(idx)
+                    variables_refs.pop(idx)  # Remove corresponding variables
                     break
         elif tree.get_children():
             last_item = tree.get_children()[-1]
             tree.delete(last_item)
-            rid, widgets = widget_refs.pop()
+            widgets = widget_refs.pop()  # No `rid` here, just the widget list
+            variables_refs.pop()  # Remove corresponding variables
             for widget in widgets:
                 widget.destroy()
 
@@ -109,13 +112,12 @@ def create_table():
             messagebox.showerror("Error",f"Error creating table: {e}")
             
 
-
-    Button(create_window, text="Add Row", command=add_row).grid(row=1, column=0)
-    Button(create_window, text="Remove Row", command=remove_row).grid(row=1, column=1)
     
-    tree.grid(row=2, column=0, columnspan=6)
+    tree.pack(anchor='w', fill='x')
     
-    Button(create_window, text="Create table", command=execute_create_table_query).grid(row=3, column=0) # add command to create table in database
+    Button(create_window, text="Add Row", command=add_row).pack(side='left', padx=5, pady=5, anchor='n')
+    Button(create_window, text="Remove Row", command=remove_row).pack(side='left', padx=5, pady=5, anchor='n')
+    Button(create_window, text="Create Table", command=execute_create_table_query).pack(side='left', padx=5, pady=5, anchor='n')
         
 
     
@@ -221,18 +223,9 @@ def get_database_structure():
             menu = tkinter.Menu(m, tearoff=0)
             menu.add_command(label="Add Table", command=create_table)
             menu.post(event.x_root, event.y_root)
-        if selected_item == view_node:
-            tree.selection_set(selected_item)
-            menu = tkinter.Menu(m, tearoff=0)
-            menu.add_command(label="Add View")
-            menu.post(event.x_root, event.y_root)   
-        if selected_item == trigger_node:
-            tree.selection_set(selected_item)
-            menu = tkinter.Menu(m, tearoff=0)
-            menu.add_command(label="Add Trigger")
-            menu.post(event.x_root, event.y_root)      
-    
+
     tree.bind("<Button-3>", on_right_click)
+    
     
             
         
@@ -334,7 +327,7 @@ def create_db_from_sql(sql_file):
         
 
 def import_db():
-    global sqlite, kursor, inputtxt, outputtxt, printButton, combo, m, label_treedata, result_label, top_frame
+    global sqlite, kursor, inputtxt, outputtxt, printButton, combo, m, label_treedata, result_label
 
     db_path = filedialog.askopenfilename(
         title="Select a .db file",
@@ -354,24 +347,18 @@ def import_db():
             combo.config(values=tables)
             m.title("SQLite Database Manager - " + str(db_path))
             
-            printButton.pack(side='top', anchor='w')
-
-            top_frame.pack(side='top', padx=0, pady=0, anchor='w', fill='x')
-
-            top_frame.grid_rowconfigure(0, weight=1)  # Allow the row to stretch horizontally
-            top_frame.grid_columnconfigure(0, weight=1)  # Allow the first column to stretch horizontally
-            top_frame.grid_columnconfigure(1, weight=1)  # Allow the second column to stretch horizontally
+            printButton.pack(side='top', pady=5, anchor='w')
 
             # Use grid to place inputtxt and result_label next to each other
-            inputtxt.grid(row=0, column=0, sticky='nsew')  # 'ew' stretches inputtxt horizontally
-            result_label.grid(row=0, column=1, sticky='nsew')  # 'ew' stretches result_label horizontally
+            inputtxt.pack(side='top', pady=5, anchor='w', fill='x')  # 'ew' stretches inputtxt horizontally
+            result_label.pack(anchor='w',fill='both')  # 'ew' stretches result_label horizontally
             children = result_label.winfo_children()
-            if len(children) > 0:
-                children[0].destroy()
-
-            tree = ttk.Treeview(result_label, xscrollcommand=h1.set, yscrollcommand=v1.set)
-            tree.pack()
-            outputtxt.pack(side='top', pady=5, anchor='w', fill='y')
+            if len(children) > 2:
+                children[2].destroy()
+                
+            tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
+            tree.pack(anchor='w', side='top',fill='both')
+            outputtxt.pack(side='top', pady=5, anchor='w', fill='both')
 
             combo.pack(side='top', pady=0, padx=0, anchor='w')
             label_treedata.pack(side='top', padx=0, pady=0, fill='both', expand=True)
@@ -483,18 +470,19 @@ def execute_query():
         try:
             kursor.execute(query)
             sqlite.commit()
+            get_database_structure()
             result = kursor.fetchall()
 
             if result:
                 outputtxt.config(state='normal')
                 outputtxt.delete(1.0, "end")
-                outputtxt.insert("insert", f"Execution finished without errors.\nResult:\n{query}\n")
+                outputtxt.insert("insert", f"Execution finished without errors.\n{query}\n")
                 outputtxt.config(state='disabled')
 
                 # Clear existing Treeview if any
                 children = result_label.winfo_children()
-                if len(children) > 0:
-                    children[0].destroy()
+                if len(children) > 2:
+                    children[2].destroy()
 
                 # Create Treeview widget
                 tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
@@ -515,7 +503,10 @@ def execute_query():
                     tree.insert('', 'end', values=row)
 
                 # Pack the Treeview widget
-                tree.pack(padx=0, pady=0, anchor='w', fill='x')
+                tree.pack(side='bottom', padx=0, pady=0, anchor='nw')
+                
+                h3.config(command=tree.xview)
+                v3.config(command=tree.yview)  
             else:
                 outputtxt.config(state='normal')
                 outputtxt.delete(1.0, "end")
@@ -568,6 +559,14 @@ navbar.pack(fill='x', side='top')
 nav_db_struct = tkinter.Button(navbar, text="Database structure", borderwidth=0, relief="flat", bg=m.cget("bg"), command=lambda: switch_view("1"))
 nav_db_struct.pack(side="left")
 
+def on_right_click(event):
+    menu = tkinter.Menu(m, tearoff=0)
+    menu.add_command(label="Refresh", command=get_database_structure)
+    menu.post(event.x_root, event.y_root)
+
+nav_db_struct.bind("<Button-3>", on_right_click)
+    
+
 nav_browse_data = tkinter.Button(navbar, text="Browse data", borderwidth=0, relief="flat", bg='lightgray', command=lambda: switch_view("2"))
 nav_browse_data.pack(side="left")
 
@@ -593,11 +592,10 @@ v2 = tkinter.Scrollbar(label_db_struct)
 v2.pack(side = RIGHT, fill = Y)
 
 
-top_frame = tkinter.Frame(label_sql)
 
-inputtxt = tkinter.Text(top_frame, height=5, width=50)
+inputtxt = tkinter.Text(label_sql, height=5, width=50)
 outputtxt = tkinter.Text(label_sql, width=50)
-result_label = tkinter.Frame(top_frame, width=50, height=5, bg='white')
+result_label = tkinter.Frame(label_sql, width=50, height=5, bg='white')
 
 h3 = tkinter.Scrollbar(result_label, orient = 'horizontal')
 h3.pack(side = BOTTOM, fill = X)
