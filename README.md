@@ -7,8 +7,7 @@ rozwijamy baze danych:
 
 Eryk
 rozwoj aplikacji:
-* Zrobic wszystkie creatory w db_struct
+* Zrobic opcje modify table db_struct
 * Dodac import i export XML
-* Ulepszyc zakladke sql execute
 * Zrobic jakies podstawowe szyfrowanie danych
   
