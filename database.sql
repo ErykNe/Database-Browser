@@ -61,7 +61,7 @@ CREATE TABLE MenuItems (
     Name VARCHAR(100) NOT NULL,
     Description VARCHAR(500),
     Price DECIMAL(10, 2) NOT NULL,
-    Availability VARCHAR(20) NOT NULL
+    Availability VARCHAR(20) NOT NULL,
     FOREIGN KEY (MenuID) REFERENCES Menus(MenuID) ON DELETE CASCADE
 );
 
@@ -90,6 +90,7 @@ CREATE TABLE Orders (
     MenuID INTEGER,
     OrderDateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     TotalAmount DECIMAL(10, 2),
+    PaymentMethod VARCHAR(50) NOT NULL,
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE SET NULL,
     FOREIGN KEY (StaffID) REFERENCES Staff(StaffID) ON DELETE SET NULL
 );
@@ -112,6 +113,16 @@ CREATE TABLE Payments (
     PaymentMethod VARCHAR(50) NOT NULL,
     PaymentStatus TEXT DEFAULT 'Pending' CHECK (PaymentStatus IN ('Pending', 'Completed', 'Failed')),
     FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE CASCADE
+);
+
+CREATE TABLE FinancialRecords (
+    RecordID INTEGER PRIMARY KEY,
+    RecordDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    RecordType VARCHAR(50) NOT NULL CHECK (RecordType IN ('Revenue', 'Expense')),
+    Description TEXT NOT NULL,
+    Amount DECIMAL(10, 2) NOT NULL,
+    RelatedID INTEGER, -- Can be used to reference Orders, Suppliers, etc.
+    RelatedType VARCHAR(50) -- Type of the related record, e.g., 'Order', 'Supplier'
 );
 
 INSERT INTO Addresses (Street, City, State, ZipCode, Country) VALUES
@@ -155,7 +166,7 @@ INSERT INTO Suppliers (Name, ContactName, ContactEmail, PhoneNumber, AddressID) 
 INSERT INTO Ingredients (Name, Unit, SupplierID, StockQuantity) VALUES
 ('Tomatoes', 'kg', 1, 100),
 ('Beef', 'kg', 3, 50),
-('Salmon', 'kg', 4, 30),
+('Salomon', 'kg', 4, 30),
 ('Flour', 'kg', 5, 200),
 ('Cheese', 'kg', 2, 75);
 
@@ -177,8 +188,8 @@ INSERT INTO MenuIngredients (IngredientID, Quantity) VALUES
 (4, 0.2),
 (2, 0.25),
 (3, 0.3),
-(2, 0.15),
-(5, 0.1);
+(5, 0.15),
+(4, 0.1);
 
 INSERT INTO Reservations (CustomerID, ReservationDateTime, NumberOfGuests, SpecialRequests) VALUES
 (1, '2025-01-13 08:00:00', 2, 'Window seat'),
@@ -187,12 +198,12 @@ INSERT INTO Reservations (CustomerID, ReservationDateTime, NumberOfGuests, Speci
 (4, '2025-01-14 07:30:00', 1, 'Quiet corner'),
 (5, '2025-01-14 18:00:00', 5, 'Anniversary celebration');
 
-INSERT INTO Orders (CustomerID, StaffID, MenuID, TotalAmount) VALUES 
-(1, 1, 2, 19.98), 
-(3, 3, 3, 29.98), 
-(4, 4, 4, 12.98),
-(5, 5, 5,  9.98), 
-(1, 2, 3, 44.97);
+INSERT INTO Orders (CustomerID, StaffID, MenuID, TotalAmount,PaymentMethod) VALUES 
+(1, 1, 2, 19.98, 'Cash'), 
+(3, 3, 3, 29.98, 'Card'), 
+(4, 4, 4, 12.98, 'Card'),
+(5, 5, 5,  9.98, 'Cash'), 
+(1, 2, 3, 44.97, 'Cash');
 
 INSERT INTO OrderDetails (OrderID, MenuItemID, Quantity, Price) VALUES 
 (1, 2, 2, 9.99),
@@ -207,6 +218,13 @@ INSERT INTO Payments (OrderID, Amount, PaymentMethod) VALUES
 (3, 12.98, 'Card'),
 (4, 9.98, 'Cash'),
 (5, 44.97, 'Cash');
+
+INSERT INTO FinancialRecords (RecordType, Description, Amount, RelatedID, RelatedType) VALUES 
+('Revenue', 'Payment received for Order 1', 19.98, 1, 'Order'),
+('Revenue', 'Payment received for Order 2', 29.98, 2, 'Order'),
+('Revenue', 'Payment received for Order 3', 12.98, 3, 'Order'),
+('Revenue', 'Payment received for Order 4', 9.98, 4, 'Order'),
+('Revenue', 'Payment received for Order 5', 44.97, 5, 'Order');
 
 -------------------------------------------------------------------------------------
 
@@ -248,6 +266,22 @@ BEGIN
 END;
 
 -------------------------------------------------------------------------------------
+
+CREATE TRIGGER after_insert_payments
+AFTER INSERT ON Payments
+FOR EACH ROW
+BEGIN
+    INSERT INTO FinancialRecords (RecordType, Description, Amount, RelatedID, RelatedType)
+    VALUES (
+        'Revenue', 
+        'Payment received for Order ' || NEW.OrderID, 
+        NEW.Amount, 
+        NEW.OrderID, 
+        'Order'
+    );
+END;
+
+--------------------------------------------------------------------------------------
 
 CREATE VIEW OrdersSummary AS
 SELECT 
@@ -297,3 +331,28 @@ JOIN
     MenuIngredients ON MenuItems.MenuItemID = MenuIngredients.MenuItemID
 JOIN 
     Ingredients ON MenuIngredients.IngredientID = Ingredients.IngredientID;
+
+-----------------------------------------
+CREATE VIEW FinancialSummary AS
+SELECT 
+    RecordType, 
+    SUM(Amount) AS TotalAmount, 
+    COUNT(*) AS TransactionCount
+FROM 
+    FinancialRecords
+GROUP BY 
+    RecordType;
+-----------------------------------------
+CREATE VIEW FinancialDetails AS
+SELECT 
+    RecordID, 
+    RecordDate, 
+    RecordType, 
+    Description, 
+    Amount, 
+    RelatedID, 
+    RelatedType
+FROM 
+    FinancialRecords
+ORDER BY 
+    RecordDate DESC;
