@@ -338,6 +338,9 @@ def import_db():
     
     if db_path:  
         try:
+            if(sqlite):
+                sqlite.close()
+            
             sqlite = sqlite3.connect(db_path, check_same_thread=False, uri=True)
             kursor = sqlite.cursor()
             result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -450,15 +453,37 @@ def import_db_from_sql():
     
     if db_path:  
         try:
+            if(sqlite):
+                sqlite.close()
+            
             create_db_from_sql(db_path)
-            result = kursor.execute("SELECT sql FROM sqlite_master WHERE type='table';") # execute test
-            
-            print(result.fetchall())
-            
-            # Show the Text box and Button only if the connection is successful
+            result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = [str(table[0]) for table in result.fetchall()]
+
+            combo.set("Select table")
+            combo.config(values=tables)
             m.title("SQLite Database Manager - " + str(db_path))
-            inputtxt.pack()
-            printButton.pack()
+            
+            printButton.pack(side='top', pady=5, anchor='w')
+
+            # Use grid to place inputtxt and result_label next to each other
+            inputtxt.pack(side='top', pady=5, anchor='w', fill='x')  # 'ew' stretches inputtxt horizontally
+            result_label.pack(anchor='w',fill='both')  # 'ew' stretches result_label horizontally
+            children = result_label.winfo_children()
+            if len(children) > 2:
+                children[2].destroy()
+                
+            tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
+            tree.pack(anchor='w', side='top',fill='both')
+            outputtxt.pack(side='top', pady=5, anchor='w', fill='both')
+
+            combo.pack(side='top', pady=0, padx=0, anchor='w')
+            label_treedata.pack(side='top', padx=0, pady=0, fill='both', expand=True)
+            label_db_struct.config(bg='white')
+            get_database_structure()
+            children = label_treedata.winfo_children()
+            if len(children) > 2:
+                children[2].destroy() 
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error connecting to database: {e}")
             import_db_from_sql()       
@@ -466,58 +491,77 @@ def import_db_from_sql():
 def execute_query():
     global h3, v3
     if sqlite:
-        query = inputtxt.get(1.0, "end-1c")  
+        query = inputtxt.get(1.0, "end-1c").strip()  
         try:
+            # Execute the query
             kursor.execute(query)
-            sqlite.commit()
-            get_database_structure()
-            result = kursor.fetchall()
 
-            if result:
-                outputtxt.config(state='normal')
-                outputtxt.delete(1.0, "end")
-                outputtxt.insert("insert", f"Execution finished without errors.\n{query}\n")
-                outputtxt.config(state='disabled')
+            # Check if it’s a SELECT query
+            if query.lower().startswith("select"):
+                result = kursor.fetchall()
 
                 # Clear existing Treeview if any
-                children = result_label.winfo_children()
-                if len(children) > 2:
-                    children[2].destroy()
+                for child in result_label.winfo_children():
+                    child.destroy()
 
-                # Create Treeview widget
-                tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
+                if result:
+                    outputtxt.config(state='normal')
+                    outputtxt.delete(1.0, "end")
+                    outputtxt.insert("insert", f"Execution finished without errors.\n{query}\n")
+                    outputtxt.config(state='disabled')
+                    # Display the results in Treeview
+                    columns = [desc[0] for desc in kursor.description]  # Get column names
 
-                tree["show"] = "headings"
+                    # Create Treeview widget
+                    tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
+                    tree["show"] = "headings"
+                    tree["columns"] = columns
 
-                # Set column headers based on the result
-                columns = [desc[0] for desc in kursor.description]  # Get column names from cursor description
-                tree["columns"] = columns
+                    # Configure columns and headings
+                    for col in columns:
+                        tree.heading(col, text=col, anchor="center")
+                        tree.column(col, width=100, anchor="center", stretch=False)
 
-                # Set column headings and column widths
-                for col in columns:
-                    tree.heading(col, text=col, anchor="center")
-                    tree.column(col, width=100, anchor="center", stretch=False)
+                    # Insert rows into the Treeview
+                    for row in result:
+                        tree.insert("", "end", values=row)
 
-                # Insert the rows into the Treeview
-                for row in result:
-                    tree.insert('', 'end', values=row)
+                    # Pack the Treeview widget
+                    tree.grid(row=0, column=0, sticky="nsew")
 
-                # Pack the Treeview widget
-                tree.pack(side='bottom', padx=0, pady=0, anchor='nw')
-                
-                h3.config(command=tree.xview)
-                v3.config(command=tree.yview)  
+                    # Add scrollbars
+                    h3 = ttk.Scrollbar(result_label, orient="horizontal", command=tree.xview)
+                    v3 = ttk.Scrollbar(result_label, orient="vertical", command=tree.yview)
+                    tree.configure(xscrollcommand=h3.set, yscrollcommand=v3.set)
+
+                    # Place scrollbars
+                    h3.grid(row=1, column=0, sticky="ew")
+                    v3.grid(row=0, column=1, sticky="ns")
+
+                    # Configure grid weights for resizing
+                    result_label.grid_rowconfigure(0, weight=1)
+                    result_label.grid_columnconfigure(0, weight=1)
+
+                else:
+                    # Handle case with no results
+                    outputtxt.config(state="normal")
+                    outputtxt.delete(1.0, "end")
+                    outputtxt.insert("insert", f"No results found for query:\n{query}\n")
+                    outputtxt.config(state="disabled")
             else:
+                # For non-SELECT queries (like INSERT/UPDATE)
+                sqlite.commit()
+                get_database_structure()
                 outputtxt.config(state='normal')
                 outputtxt.delete(1.0, "end")
                 outputtxt.insert("insert",f"Execution finished without errors.\nAt line 1:\n{query}\n")
                 outputtxt.config(state='disabled')
         except sqlite3.Error as e:
+            # Handle SQL errors
             messagebox.showerror("Error", f"Error executing query: {e}")
             outputtxt.config(state='normal')
             outputtxt.delete(1.0, "end")
             outputtxt.config(state='disabled')
-
 
 m = tkinter.Tk()
 m.title("SQLite Database Manager")
