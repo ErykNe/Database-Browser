@@ -12,6 +12,117 @@ import xml.etree.ElementTree as ET
 sqlite = None  
 kursor = None  
 
+def export_db():
+    if not sqlite:
+        messagebox.showerror("Error", "No connection identified")
+        return
+
+    # Create the export window
+    export_window = Toplevel(m)
+    export_window.title("Export database")
+    export_window.geometry("650x270")
+    
+    # File Details LabelFrame
+    label_frame = LabelFrame(export_window, text="File Details: ")
+    label_frame.pack(fill='x', padx=10, pady=10)
+    
+    # File name input
+    file_name_label = Label(label_frame, text="File name:")
+    file_name_label.pack(side='left', padx=10, pady=10, anchor='n')
+    file_name_var = StringVar(value="name")
+    delimiter_entry = Entry(label_frame, textvariable=file_name_var)
+    delimiter_entry.pack(side='left', padx=10, pady=10, anchor='n')
+    
+    # File path label
+    file_src_label = Label(label_frame, text="File path:")
+    file_src_label.pack(side='left', padx=10, pady=10, anchor='n')
+    
+    # Function to handle combobox selection
+    def on_selection(event):
+        if combo_var.get() == "Other...":
+            folder_path = filedialog.askdirectory(parent=export_window)  # Open folder dialog to select a directory
+            if folder_path:  # If a folder is selected
+                combo_var.set(folder_path)  # Set the selected folder path in the combobox
+
+    # Set the default value to Desktop
+    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+    
+    # Create the combobox
+    combo_var = StringVar()
+    options = [desktop_path, "Other..."]
+    combobox = ttk.Combobox(label_frame, textvariable=combo_var, values=options, state="normal")
+    combobox.pack(fill='x', padx=10, pady=10, anchor='n')
+    combobox.bind("<<ComboboxSelected>>", on_selection)  # Bind selection event
+
+    # Set default path to desktop
+    combobox.set(desktop_path)
+
+    checkbox_frame = LabelFrame(export_window, text="File Type:")
+    checkbox_frame.pack(fill='x', padx=10, pady=10)
+
+    # File type variables
+    db_var = BooleanVar(value=False)
+    sql_var = BooleanVar(value=False)
+    xml_var = BooleanVar(value=False)
+
+    # Checkboxes
+    db_checkbox = Checkbutton(checkbox_frame, text=".db", variable=db_var)
+    db_checkbox.pack(side='left', padx=10, pady=10)
+
+    sql_checkbox = Checkbutton(checkbox_frame, text=".sql", variable=sql_var)
+    sql_checkbox.pack(side='left', padx=10, pady=10)
+
+    xml_checkbox = Checkbutton(checkbox_frame, text=".xml", variable=xml_var)
+    xml_checkbox.pack(side='left', padx=10, pady=10)
+    
+    def export_db_to_db_file(file_name, selected_path):
+        print("exporting to db file")
+        
+    def export_db_to_sql_file(file_name, selected_path):
+        print("exporting to sql file")
+    
+    def export_db_to_xml_file(file_name, selected_path):
+        print("exporting to xml file")        
+
+    # Confirm Button
+    def confirm_export():
+        selected_path = combo_var.get()
+        file_name = file_name_var.get()
+        file_types = []
+        if db_var.get():
+            file_types.append(".db")
+        if sql_var.get():
+            file_types.append(".sql")
+        if xml_var.get():
+            file_types.append(".xml")
+        
+        if not os.path.isdir(selected_path):
+            messagebox.showerror("Error", "Please select a valid directory.")
+            return
+        if not file_name.strip():
+            messagebox.showerror("Error", "File name cannot be empty.")
+            return
+        if not file_types:
+            messagebox.showerror("Error", "Please select at least one file type.")
+            return
+
+        # Export logic here
+        selected_types = ", ".join(file_types)
+        print(selected_types, file_types)
+        for file_type in file_types:
+            match file_type:
+                case '.db':
+                    export_db_to_db_file(file_name, selected_path)
+                case '.sql':
+                    export_db_to_sql_file(file_name, selected_path)
+                case '.xml':
+                    export_db_to_xml_file(file_name, selected_path)
+        messagebox.showinfo("Success", f"Database exported to:\n{os.path.join(selected_path, file_name)}\nFile types: {selected_types}")
+
+    confirm_button = Button(export_window, text="Export", command=confirm_export, width=18)
+    confirm_button.pack(pady=20,padx=10, side='left', anchor='n')
+    
+
 def create_table():
     create_window = Toplevel(m)
     create_window.title("Create Table")
@@ -588,7 +699,13 @@ importmenu.add_cascade(label="Table(s)", menu=table_submenu)
 menuBar.add_cascade(label="Import", menu=importmenu)
 
 exportmenu = Menu(menuBar, tearoff=0)
-exportmenu.add_command(label="Database")
+exportmenu.add_command(label="Database",command=export_db)
+
+export_submenu = Menu(exportmenu, tearoff=0)
+export_submenu.add_command(label="From CSV File")
+
+exportmenu.add_cascade(label="Table",menu=export_submenu)
+
 menuBar.add_cascade(label="Export", menu=exportmenu)
 
 menuBar.add_cascade(label="View")
