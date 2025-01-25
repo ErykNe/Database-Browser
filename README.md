@@ -9,5 +9,4 @@ Eryk
 rozwoj aplikacji:
 * Zrobic opcje modify table db_struct
 * Dodac import i export XML
-* Zrobic jakies podstawowe szyfrowanie danych
   
