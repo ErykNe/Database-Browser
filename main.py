@@ -76,10 +76,79 @@ def export_db():
     xml_checkbox.pack(side='left', padx=10, pady=10)
     
     def export_db_to_db_file(file_name, selected_path):
-        print("exporting to db file")
+        # Ensure that the SQLite connection and cursor are valid
+        if not sqlite or not kursor:
+            messagebox.showerror("Error", "Database connection is not established.")
+            return
+    
+        # Determine the file path for the new DB file
+        db_file_path = os.path.join(selected_path, f"{file_name}.db")
+    
+        try:
+            # Create a new SQLite connection to the destination DB file
+            new_db_connection = sqlite3.connect(db_file_path)
+            new_db_cursor = new_db_connection.cursor()
+
+            # Get a list of all tables, triggers, and views
+            kursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+            tables = kursor.fetchall()
         
+            # Export tables
+            for table in tables:
+                table_name = table[0]
+
+                # Get the CREATE TABLE statement for the current table
+                kursor.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name='{table_name}';")
+                create_table_sql = kursor.fetchone()[0]
+                new_db_cursor.execute(create_table_sql)
+
+                # Copy the data from the current table to the new table
+                kursor.execute(f"SELECT * FROM {table_name};")
+                rows = kursor.fetchall()
+                for row in rows:
+                    placeholders = ', '.join('?' for _ in row)  # Generate placeholders for SQL INSERT
+                    insert_sql = f"INSERT INTO {table_name} VALUES ({placeholders});"
+                    new_db_cursor.executemany(insert_sql, [row])
+
+            # Export views
+            kursor.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
+            views = kursor.fetchall()
+            for view in views:
+                view_name, view_sql = view
+                new_db_cursor.execute(view_sql)  # Execute the CREATE VIEW statement in the new DB
+
+            # Export triggers
+            kursor.execute("SELECT name, sql FROM sqlite_master WHERE type='trigger';")
+            triggers = kursor.fetchall()
+            for trigger in triggers:
+                trigger_name, trigger_sql = trigger
+                new_db_cursor.execute(trigger_sql)  # Execute the CREATE TRIGGER statement in the new DB
+
+            # Commit and close the new database connection
+            new_db_connection.commit()
+            new_db_connection.close()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export to DB file: {str(e)}")
+
     def export_db_to_sql_file(file_name, selected_path):
-        print("exporting to sql file")
+        # Ensure that the SQLite connection and cursor are valid
+        if not sqlite or not kursor:
+            messagebox.showerror("Error", "Database connection is not established.")
+            return
+    
+        # Determine the file path for the new SQL file
+        sql_file_path = os.path.join(selected_path, f"{file_name}.sql")
+    
+        try:
+            # Open the SQL file for writing
+            with open(sql_file_path, 'w') as sql_file:
+                # Generate the SQL dump using SQLite's built-in .dump method
+                for line in sqlite.iterdump():
+                    sql_file.write(f"{line}\n")
+        
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export to SQL file: {str(e)}")
     
     def export_db_to_xml_file(file_name, selected_path):
         print("exporting to xml file")        
