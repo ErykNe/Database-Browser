@@ -37,15 +37,18 @@ def export_db():
     file_src_label = Label(label_frame, text="File path:")
     file_src_label.pack(side='left', padx=10, pady=10, anchor='n')
     
+    # Set the default value to Desktop
+    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
     # Function to handle combobox selection
     def on_selection(event):
         if combo_var.get() == "Other...":
             folder_path = filedialog.askdirectory(parent=export_window)  # Open folder dialog to select a directory
             if folder_path:  # If a folder is selected
                 combo_var.set(folder_path)  # Set the selected folder path in the combobox
+            else:
+                combo_var.set(desktop_path)    
 
-    # Set the default value to Desktop
-    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+
     
     # Create the combobox
     combo_var = StringVar()
@@ -487,9 +490,7 @@ def switch_view(view):
     
 def create_db_from_sql(sql_file):
     global sqlite, kursor
-    
     try:
-        
         if os.path.exists("temp.db"):
             os.remove("temp.db")
 
@@ -554,9 +555,109 @@ def import_db():
             messagebox.showerror("Error", f"Error connecting to database: {e}")
             import_db()
 
+def export_table_to_csv():
+    global sqlite, kursor, combo, m
+
+    if not sqlite:
+        messagebox.showerror("Error", "No database connection found.")
+        return
+
+    # Fetch table names for the Combobox
+    kursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables = [row[0] for row in kursor.fetchall()]
+
+    if not tables:
+        messagebox.showerror("Error", "No tables found in the database.")
+        return
+
+    export_window = Toplevel(m)
+    export_window.title("Export Table to CSV")
+
+    Label(export_window, text="Select Table: ").grid(row=0, column=0)
+    table_var = StringVar()
+    table_combo = ttk.Combobox(export_window, textvariable=table_var, values=tables, state="readonly")
+    table_combo.grid(row=0, column=1)
+    
+    Label(export_window, text="Select path:").grid(row=1, column=0)
+    
+    # Set the default value to Desktop
+    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+    
+    
+    def on_selection(event):
+        if combo_var.get() == "Other...":
+            folder_path = filedialog.askdirectory(parent=export_window)  # Open folder dialog to select a directory
+            if folder_path:  # If a folder is selected
+                combo_var.set(folder_path)  # Set the selected folder path in the combobox
+            else:
+                combo_var.set(desktop_path)    
+
+    # Create the combobox
+    combo_var = StringVar()
+    options = [desktop_path, "Other..."]
+    combobox = ttk.Combobox(export_window, textvariable=combo_var, values=options, state="normal")
+    combobox.grid(row=1, column=1)
+    combobox.bind("<<ComboboxSelected>>", on_selection)
+    combobox.set(desktop_path)
+    
+    Label(export_window, text="Delimiter: ").grid(row=2, column=0)
+    delimiter_var = StringVar(value=",")
+    delimiter_entry = Entry(export_window, textvariable=delimiter_var)
+    delimiter_entry.grid(row=2, column=1)
+
+    Label(export_window, text="Quote Character: ").grid(row=3, column=0)
+    quote_char_var = StringVar(value='"')
+    quote_char_entry = Entry(export_window, textvariable=quote_char_var)
+    quote_char_entry.grid(row=3, column=1)
+
+    Label(export_window, text="Encoding: ").grid(row=4, column=0)
+    encoding_var = StringVar(value="UTF-8")
+    encoding_entry = Entry(export_window, textvariable=encoding_var)
+    encoding_entry.grid(row=4, column=1)
+    
+    def export():
+        selected_table = table_var.get()
+        if not selected_table:
+            messagebox.showerror("Error", "Please select a table.")
+            return
+
+        folder_path = combo_var.get()
+        if not folder_path:
+            messagebox.showerror("Error", "Please select a folder path.")
+            return
+
+        delimiter = delimiter_var.get()
+        quote_char = quote_char_var.get()
+        encoding = encoding_var.get()
+
+        try:
+            # Fetch data from the selected table
+            kursor.execute(f"SELECT * FROM {selected_table};")
+            rows = kursor.fetchall()
+            columns = [desc[0] for desc in kursor.description]
+
+            # Create CSV file path
+            csv_path = os.path.join(folder_path, f"{selected_table}.csv")
+
+            # Write data to CSV
+            with open(csv_path, mode="w", newline="", encoding=encoding) as csv_file:
+                writer = csv.writer(csv_file, delimiter=delimiter, quotechar=quote_char, quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(columns)  # Write header
+                writer.writerows(rows)  # Write data
+
+            messagebox.showinfo("Success", f"Table exported successfully to {csv_path}")
+            export_window.destroy()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export table: {e}")
+
+    Button(export_window, text="Export", command=export).grid(row=5, column=0, columnspan=2)
+    
 def import_table_from_csv():
     global sqlite, kursor, inputtxt, outputtxt, printButton, combo, m, label_treedata
-
+    if not sqlite:
+        messagebox.showerror("Error", "No database connection found.")
+        return
     db_path = filedialog.askopenfilename(
         title="Select a .csv file",
         filetypes=[("Comma-Separated Values Files", "*.csv")]
@@ -672,6 +773,9 @@ def execute_query():
     global h3, v3
     if sqlite:
         query = inputtxt.get(1.0, "end-1c").strip()  
+        if not query or query == "":
+            messagebox.showerror("Error", "No query typed in")
+            return
         try:
             # Execute the query
             kursor.execute(query)
@@ -764,20 +868,19 @@ importmenu.add_cascade(label="Database", menu=database_submenu)
 table_submenu = Menu(importmenu, tearoff=0)
 table_submenu.add_command(label="From CSV File", command=import_table_from_csv)
 
-importmenu.add_cascade(label="Table(s)", menu=table_submenu)
+importmenu.add_cascade(label="Table", menu=table_submenu)
 menuBar.add_cascade(label="Import", menu=importmenu)
 
 exportmenu = Menu(menuBar, tearoff=0)
 exportmenu.add_command(label="Database",command=export_db)
 
 export_submenu = Menu(exportmenu, tearoff=0)
-export_submenu.add_command(label="From CSV File")
+export_submenu.add_command(label="To CSV File", command=export_table_to_csv)
 
 exportmenu.add_cascade(label="Table",menu=export_submenu)
 
 menuBar.add_cascade(label="Export", menu=exportmenu)
 
-menuBar.add_cascade(label="View")
 
 m.config(menu=menuBar)
 
