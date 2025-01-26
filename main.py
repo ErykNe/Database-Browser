@@ -286,7 +286,89 @@ def export_db():
 
     confirm_button = Button(export_window, text="Export", command=confirm_export, width=18)
     confirm_button.pack(pady=20,padx=10, side='left', anchor='n')
+
+def create_column(table_name):
+    create_column_window = Toplevel(m)
+    create_column_window.title("Create Column")
+
+    label_frame = LabelFrame(create_column_window, text="Column Details: ")
+    label_frame.pack(fill='x', padx=10, pady=10)
+
+    columns = ('Name', 'Type', 'Default', 'NN', 'PK', 'AI')
+
+
+    # Now create the widgets to be placed below the columns using pack
+    widget_frame = Frame(label_frame)  # Create a frame to hold widgets
+    widget_frame.pack(fill='x', padx=10, pady=5)
+
+    row_widgets = []
+    variables = []
     
+    def create_column_in_db(table_name, variables):
+  
+        column_name = variables[0].get()  # Name of the new column
+        column_type = variables[1].get()  # Type of the new column
+        default_value = variables[2].get()  # Default value
+        is_nn = variables[3].get()  # NOT NULL
+        is_pk = variables[4].get()  # PRIMARY KEY
+        is_ai = variables[5].get()  # AUTOINCREMENT
+
+        # Construct SQL query based on the provided inputs
+        try:
+            query = f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
+
+            # Add constraints if provided
+            constraints = []
+            if is_nn:
+                constraints.append("NOT NULL")
+            if is_pk:
+                constraints.append("PRIMARY KEY")
+            if is_ai:
+                constraints.append("AUTOINCREMENT")
+            if constraints:
+                query += " " + " ".join(constraints)
+            if default_value:
+                query += f" DEFAULT {default_value}"
+
+            # Execute the SQL query
+            kursor.execute(query)
+            sqlite.commit()
+            get_database_structure()
+
+            messagebox.showinfo("Success", f"Column '{column_name}' added to table '{table_name}'.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add column: {e}")
+
+    # For each column, create the appropriate widget and place it below the Treeview
+    for col_index, col_name in enumerate(columns):
+        if col_name == 'Type':
+            widget_label = Label(widget_frame, text=col_name, width=5, anchor="w")
+            widget_label.pack(side='left', padx=5, pady=5)
+            var = StringVar()
+            widget = ttk.Combobox(widget_frame, textvariable=var, values=["INTEGER", "TEXT", "BLOB", "REAL", "NUMERIC"])
+        elif col_name in ['NN', 'PK', 'AI']:
+            # Use a frame to group the label and checkbox together
+            group_frame = Frame(label_frame)
+            group_frame.pack(side='left', padx=5, pady=5, anchor='nw')
+
+            widget_label = Label(group_frame, text=col_name, width=5, anchor="nw")
+            widget_label.pack(padx=0)  # Minimal padding for the label
+            var = BooleanVar()
+            widget = Checkbutton(group_frame, variable=var)
+            widget.pack(side='left', padx=0)  # No padding for the checkbox
+        else:
+            widget_label = Label(widget_frame, text=col_name, width=5, anchor="w")
+            widget_label.pack(side='left', padx=5, pady=5)
+            var = StringVar()
+            widget = Entry(widget_frame, textvariable=var)
+
+        widget.pack(side='left', padx=0, anchor='w')
+        row_widgets.append(widget)
+        variables.append(var)
+
+    Button(create_column_window, text="Create Column", command=lambda: create_column_in_db(table_name, variables)).pack(side='left', padx=5, pady=10, anchor='n')
+
 
 def create_table():
     create_window = Toplevel(m)
@@ -359,6 +441,9 @@ def create_table():
     def execute_create_table_query():
         print(widget_refs)
         print(variables_refs)
+        if not widget_refs or widget_refs == []:
+            messagebox.showerror("Error",f"Error creating table: No columns provided")
+            return
         query = f"CREATE TABLE {delimiter_entry.get()} ("
 
         for variables in variables_refs:
@@ -386,6 +471,7 @@ def create_table():
             get_database_structure()
         except sqlite3.Error as e:
             messagebox.showerror("Error",f"Error creating table: {e}")
+
             
 
     
@@ -401,105 +487,111 @@ def create_table():
 
 def get_database_structure():
     global sqlite, kursor, label_db_struct
-    
+
+    # Clear any existing child widgets
     children = label_db_struct.winfo_children()
     if len(children) > 2:
-        children[2].destroy() 
-    
-    tree = ttk.Treeview(label_db_struct, xscrollcommand = h2.set, yscrollcommand = v2.set)
-    
+        children[2].destroy()
+
+    tree = ttk.Treeview(label_db_struct, xscrollcommand=h2.set, yscrollcommand=v2.set)
     tree.pack(expand=True, fill="both")
     columns = ["Type", "Schema"]
-    
+
     tree["columns"] = columns
     tree.heading("#0", text="Name", anchor='w')
     tree.heading("Type", text="Type", anchor='w')
     tree.heading("Schema", text="Schema", anchor='w')
-    
-    
+
     longest_schema_length = 0
 
-    
+    # Configure underline tag for primary keys
     tree.tag_configure("underline", font=("", 9, "underline"))
-    
-    
-    table_node = tree.insert("", "end", text="Tables", open=True)
+
+    # Insert Table Node
+    table_node = tree.insert("", "end", text="Tables", open=True, tags=("table_node",))
 
     query_table_names = "SELECT name, type, sql FROM sqlite_master WHERE type='table'"
     tables = kursor.execute(query_table_names).fetchall()
     sqlite.commit()
-    
-    
+
     for table in tables:
         name = str(table[0])
         schema = str(table[2]).replace("\n", " ")
-        
-        if(longest_schema_length < len(schema)):
+
+        if longest_schema_length < len(schema):
             longest_schema_length = len(schema)
-        
-        child_1 = tree.insert(table_node, "end", text=name, open=False, values=("", schema))
+
+        # Insert each table as a child of the table_node
+        table_item = tree.insert(table_node, "end", text=name, open=False, values=("", schema), tags=("table",))
         query_pragma = f"PRAGMA table_info({name});"
         table_struct = kursor.execute(query_pragma).fetchall()
         sqlite.commit()
         for struct in table_struct:
             result = f'"{struct[1]}" {struct[2]} {"NOT NULL " if struct[3] == 1 else ""} {"PRIMARY KEY" if struct[5] == 1 else ""}'
-            child_2 = tree.insert(child_1, "end", text=str(struct[1]), values=(str(struct[2]), result))
-            
+            column_item = tree.insert(table_item, "end", text=str(struct[1]), values=(str(struct[2]), result), tags=("column",))
+
             if struct[5] == 1:
-                tree.item(child_2, tags=("underline",))
-            
-    view_node = tree.insert("", "end", text="Views", open=True)
-    
+                tree.item(column_item, tags=("column", "underline"))
+
+    # Insert View Node
+    view_node = tree.insert("", "end", text="Views", open=True, tags=("view_node",))
+
     query_view_names = "SELECT name, type, sql FROM sqlite_master WHERE type='view'"
     views = kursor.execute(query_view_names).fetchall()
     sqlite.commit()
-    
+
     for view in views:
         name = str(view[0])
         schema = str(view[2]).replace("\n", " ")
-        
-        if(longest_schema_length < len(schema)):
+
+        if longest_schema_length < len(schema):
             longest_schema_length = len(schema)
-            
-        child_1 = tree.insert(view_node, "end", text=name, open=False, values=("", schema))
-        query_pragma = f"PRAGMA table_info({name});"
-        table_struct = kursor.execute(query_pragma).fetchall()
-        sqlite.commit()
-        for struct in table_struct:
-            result = f'"{struct[1]}" {struct[2]} {"NOT NULL " if struct[3] == 1 else ""} {"PRIMARY KEY" if struct[5] == 1 else ""}'
-            tree.insert(child_1, "end", text=str(struct[1]), values=(str(struct[2]), result))
-    
-    trigger_node = tree.insert("", "end", text="Triggers", open=True)
-    
+
+        view_item = tree.insert(view_node, "end", text=name, open=False, values=("", schema), tags=("view",))
+
+    # Insert Trigger Node
+    trigger_node = tree.insert("", "end", text="Triggers", open=True, tags=("trigger_node",))
+
     query_triggers_names = "SELECT name, type, sql FROM sqlite_master WHERE type='trigger'"
-    triggers = kursor.execute(query_triggers_names).fetchall()   
+    triggers = kursor.execute(query_triggers_names).fetchall()
     sqlite.commit()
-    
+
     for trigger in triggers:
         name = str(trigger[0])
         schema = str(trigger[2]).replace("\n", " ")
-        
-        if(longest_schema_length < len(schema)):
+
+        if longest_schema_length < len(schema):
             longest_schema_length = len(schema)
-            
-            
-        child_1 = tree.insert(trigger_node, "end", text=name, open=False, values=("", schema))
-          
-    tree.column("#0", width=max((int(m.winfo_width()/3)), 100), stretch=False)      
-    tree.column(columns[0], width=max((int(m.winfo_width()/3)), 100), stretch=False)      
-    tree.column(columns[1], width=max((longest_schema_length * 6), 100), anchor='w', stretch=False)      
-    
+
+        tree.insert(trigger_node, "end", text=name, open=False, values=("", schema), tags=("trigger",))
+
+    # Adjust column widths
+    tree.column("#0", width=max((int(m.winfo_width() / 3)), 100), stretch=False)
+    tree.column(columns[0], width=max((int(m.winfo_width() / 3)), 100), stretch=False)
+    tree.column(columns[1], width=max((longest_schema_length * 6), 100), anchor='w', stretch=False)
+
     h2.config(command=tree.xview)
-    v2.config(command=tree.yview)    
-    
+    v2.config(command=tree.yview)
+
+    # Define the right-click menu behavior
     def on_right_click(event):
-        selected_item = tree.identify('item', event.x, event.y)
-        if selected_item == table_node:
+        selected_item = tree.identify("item", event.x, event.y)
+        selected_tags = tree.item(selected_item, "tags")
+
+        # Check for the type of selected node based on tags
+        if "table_node" in selected_tags:
             tree.selection_set(selected_item)
             menu = tkinter.Menu(m, tearoff=0)
             menu.add_command(label="Add Table", command=create_table)
             menu.post(event.x_root, event.y_root)
+        elif "table" in selected_tags:
+            tree.selection_set(selected_item)
+            table_name = tree.item(selected_item, "text")
+            menu = tkinter.Menu(m, tearoff=0)
+            menu.add_command(label="Add Column", command=lambda: create_column(table_name))
+            menu.post(event.x_root, event.y_root)
 
+    # Bind right-click to the tree
     tree.bind("<Button-3>", on_right_click)
     
     
