@@ -7,7 +7,6 @@ CREATE TABLE Addresses (
     Country VARCHAR(100) NOT NULL
 );
 
--- Modified Customers table to include AddressID foreign key
 CREATE TABLE Customers (
     CustomerID INTEGER PRIMARY KEY,
     FirstName VARCHAR(50) NOT NULL,
@@ -18,7 +17,6 @@ CREATE TABLE Customers (
     FOREIGN KEY (AddressID) REFERENCES Addresses(AddressID) ON DELETE SET NULL
 );
 
--- Modified Staff table to include AddressID foreign key
 CREATE TABLE Staff (
     StaffID INTEGER PRIMARY KEY,
     FirstName VARCHAR(50) NOT NULL,
@@ -32,7 +30,6 @@ CREATE TABLE Staff (
     FOREIGN KEY (AddressID) REFERENCES Addresses(AddressID) ON DELETE SET NULL
 );
 
--- Modified Suppliers table to include AddressID foreign key
 CREATE TABLE Suppliers (
     SupplierID INTEGER PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
@@ -64,6 +61,7 @@ CREATE TABLE MenuItems (
     Name VARCHAR(100) NOT NULL,
     Description VARCHAR(500),
     Price DECIMAL(10, 2) NOT NULL,
+    Availability VARCHAR(20) NOT NULL,
     FOREIGN KEY (MenuID) REFERENCES Menus(MenuID) ON DELETE CASCADE
 );
 
@@ -92,6 +90,7 @@ CREATE TABLE Orders (
     MenuID INTEGER,
     OrderDateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     TotalAmount DECIMAL(10, 2),
+    PaymentMethod VARCHAR(50) NOT NULL,
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE SET NULL,
     FOREIGN KEY (StaffID) REFERENCES Staff(StaffID) ON DELETE SET NULL
 );
@@ -116,7 +115,16 @@ CREATE TABLE Payments (
     FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE CASCADE
 );
 
--- Inserting data into Addresses table
+CREATE TABLE FinancialRecords (
+    RecordID INTEGER PRIMARY KEY,
+    RecordDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    RecordType VARCHAR(50) NOT NULL CHECK (RecordType IN ('Revenue', 'Expense')),
+    Description TEXT NOT NULL,
+    Amount DECIMAL(10, 2) NOT NULL,
+    RelatedID INTEGER, -- Can be used to reference Orders, Suppliers, etc.
+    RelatedType VARCHAR(50) -- Type of the related record, e.g., 'Order', 'Supplier'
+);
+
 INSERT INTO Addresses (Street, City, State, ZipCode, Country) VALUES
 ('123 Elm Street', 'Springfield', 'IL', '62701', 'USA'),
 ('456 Oak Avenue', 'Hometown', 'CA', '90210', 'USA'),
@@ -134,7 +142,6 @@ INSERT INTO Addresses (Street, City, State, ZipCode, Country) VALUES
 ('1111 Pinewood Pl', 'Woodland', 'WA', '98674', 'USA'),
 ('1212 Cherry Cir', 'Cherryville', 'NJ', '07002', 'USA');
 
--- Inserting data into Customers table with AddressID
 INSERT INTO Customers (FirstName, LastName, Email, PhoneNumber, AddressID) VALUES
 ('John', 'Doe', 'john@example.com', '1234567890', 1),
 ('Jane', 'Smith', 'jane@example.com', '9876543210', 2),
@@ -142,7 +149,6 @@ INSERT INTO Customers (FirstName, LastName, Email, PhoneNumber, AddressID) VALUE
 ('Bob', 'White', 'bob@example.com', '6543217890', 4),
 ('Carol', 'Davis', 'carol@example.com', '7891234560', 5);
 
--- Inserting data into Staff table with AddressID
 INSERT INTO Staff (FirstName, LastName, Role, Email, PhoneNumber, Salary, HireDate, AddressID) VALUES
 ('Emily', 'White', 'Manager', 'emily.white@example.com', '3216549870', 55000.00, '2022-01-15', 6),
 ('Michael', 'Green', 'Chef', 'michael.green@example.com', '1597534862', 45000.00, '2022-03-01', 7),
@@ -150,7 +156,6 @@ INSERT INTO Staff (FirstName, LastName, Role, Email, PhoneNumber, Salary, HireDa
 ('David', 'Wilson', 'Bartender', 'david.wilson@example.com', '9513574862', 25000.00, '2021-11-10', 9),
 ('Laura', 'Taylor', 'Host', 'laura.taylor@example.com', '1594867532', 20000.00, '2023-07-05', 10);
 
--- Inserting data into Suppliers table with AddressID
 INSERT INTO Suppliers (Name, ContactName, ContactEmail, PhoneNumber, AddressID) VALUES
 ('Fresh Produce Co.', 'Tom Rogers', 'tom.rogers@example.com', '1231231234', 1),
 ('Beverage Distributors', 'Nancy Miles', 'nancy.miles@example.com', '2342342345', 2),
@@ -158,15 +163,13 @@ INSERT INTO Suppliers (Name, ContactName, ContactEmail, PhoneNumber, AddressID) 
 ('Seafood Delights', 'Diane Fisher', 'diane.fisher@example.com', '4564564567', 4),
 ('Bakery Goods Co.', 'Paul Baker', 'paul.baker@example.com', '5675675678', 5);
 
--- Inserting data into Ingredients table
 INSERT INTO Ingredients (Name, Unit, SupplierID, StockQuantity) VALUES
 ('Tomatoes', 'kg', 1, 100),
 ('Beef', 'kg', 3, 50),
-('Salmon', 'kg', 4, 30),
+('Salomon', 'kg', 4, 30),
 ('Flour', 'kg', 5, 200),
 ('Cheese', 'kg', 2, 75);
 
--- Inserting data into Menus table
 INSERT INTO Menus (Name, Description) VALUES
 ('Breakfast Menu', 'Delicious breakfast options to start your day'),
 ('Lunch Menu', 'Tasty and satisfying lunch selections'),
@@ -174,22 +177,20 @@ INSERT INTO Menus (Name, Description) VALUES
 ('Kids Menu', 'Fun and delicious meals for kids'),
 ('Dessert Menu', 'Sweet treats to end your meal');
 
--- Inserting data into MenuItems table
-INSERT INTO MenuItems (MenuID, Name, Description, Price) VALUES
-(1,'Pancakes', 'Fluffy pancakes with syrup', 5.99),
-(2,'Burger', 'Juicy beef burger with cheese', 9.99),
-(3,'Grilled Salmon', 'Fresh salmon with herbs', 14.99),
-(4,'Chicken Nuggets', 'Crispy chicken nuggets', 6.49),
-(5,'Chocolate Cake', 'Rich chocolate dessert', 4.99);
+INSERT INTO MenuItems (MenuID, Name, Description, Price, Availability) VALUES
+(1,'Margherita Pizza', 'Classic pizza with fresh mozzarella and basil', 5.99,'Unavailable'),
+(2,'Lasagna Bolognese', 'Traditional layered pasta with meat sauce', 9.99,'Available'),
+(3,'Grilled Branzino', 'Fresh Mediterranean sea bass with herbs', 14.99,'Available'),
+(4,'Arancini', 'Crispy risotto balls stuffed with cheese', 6.49,'Available'),
+(5,'Tiramisu', 'Classic Italian dessert with coffee and mascarpone', 4.99,'Available');
 
 INSERT INTO MenuIngredients (IngredientID, Quantity) VALUES
 (4, 0.2),
 (2, 0.25),
 (3, 0.3),
-(2, 0.15),
-(5, 0.1);
+(5, 0.15),
+(4, 0.1);
 
--- Inserting data into Reservations table
 INSERT INTO Reservations (CustomerID, ReservationDateTime, NumberOfGuests, SpecialRequests) VALUES
 (1, '2025-01-13 08:00:00', 2, 'Window seat'),
 (2, '2025-01-13 12:30:00', 4, 'Birthday party'),
@@ -197,15 +198,13 @@ INSERT INTO Reservations (CustomerID, ReservationDateTime, NumberOfGuests, Speci
 (4, '2025-01-14 07:30:00', 1, 'Quiet corner'),
 (5, '2025-01-14 18:00:00', 5, 'Anniversary celebration');
 
--- Inserting data into Orders table
-INSERT INTO Orders (CustomerID, StaffID, MenuID, TotalAmount) VALUES 
-(1, 1, 2, 19.98), 
-(3, 3, 3, 29.98), 
-(4, 4, 4, 12.98),
-(5, 5, 5,  9.98), 
-(1, 2, 3, 44.97);
+INSERT INTO Orders (CustomerID, StaffID, MenuID, TotalAmount,PaymentMethod) VALUES 
+(1, 1, 2, 19.98, 'Cash'), 
+(3, 3, 3, 29.98, 'Card'), 
+(4, 4, 4, 12.98, 'Card'),
+(5, 5, 5,  9.98, 'Cash'), 
+(1, 2, 3, 44.97, 'Cash');
 
--- Inserting data into OrderDetails table
 INSERT INTO OrderDetails (OrderID, MenuItemID, Quantity, Price) VALUES 
 (1, 2, 2, 9.99),
 (2, 3, 2, 14.99),
@@ -213,13 +212,19 @@ INSERT INTO OrderDetails (OrderID, MenuItemID, Quantity, Price) VALUES
 (4, 5, 2, 4.99),
 (5, 3, 3, 14.99);
 
--- Inserting data into Payments table
 INSERT INTO Payments (OrderID, Amount, PaymentMethod) VALUES 
 (1, 19.98, 'Cash'),
 (2, 29.98, 'Card'),
 (3, 12.98, 'Card'),
 (4, 9.98, 'Cash'),
 (5, 44.97, 'Cash');
+
+INSERT INTO FinancialRecords (RecordType, Description, Amount, RelatedID, RelatedType) VALUES 
+('Revenue', 'Payment received for Order 1', 19.98, 1, 'Order'),
+('Revenue', 'Payment received for Order 2', 29.98, 2, 'Order'),
+('Revenue', 'Payment received for Order 3', 12.98, 3, 'Order'),
+('Revenue', 'Payment received for Order 4', 9.98, 4, 'Order'),
+('Revenue', 'Payment received for Order 5', 44.97, 5, 'Order');
 
 -------------------------------------------------------------------------------------
 
@@ -261,6 +266,22 @@ BEGIN
 END;
 
 -------------------------------------------------------------------------------------
+
+CREATE TRIGGER after_insert_payments
+AFTER INSERT ON Payments
+FOR EACH ROW
+BEGIN
+    INSERT INTO FinancialRecords (RecordType, Description, Amount, RelatedID, RelatedType)
+    VALUES (
+        'Revenue', 
+        'Payment received for Order ' || NEW.OrderID, 
+        NEW.Amount, 
+        NEW.OrderID, 
+        'Order'
+    );
+END;
+
+--------------------------------------------------------------------------------------
 
 CREATE VIEW OrdersSummary AS
 SELECT 
@@ -310,3 +331,28 @@ JOIN
     MenuIngredients ON MenuItems.MenuItemID = MenuIngredients.MenuItemID
 JOIN 
     Ingredients ON MenuIngredients.IngredientID = Ingredients.IngredientID;
+
+-----------------------------------------
+CREATE VIEW FinancialSummary AS
+SELECT 
+    RecordType, 
+    SUM(Amount) AS TotalAmount, 
+    COUNT(*) AS TransactionCount
+FROM 
+    FinancialRecords
+GROUP BY 
+    RecordType;
+-----------------------------------------
+CREATE VIEW FinancialDetails AS
+SELECT 
+    RecordID, 
+    RecordDate, 
+    RecordType, 
+    Description, 
+    Amount, 
+    RelatedID, 
+    RelatedType
+FROM 
+    FinancialRecords
+ORDER BY 
+    RecordDate DESC;
