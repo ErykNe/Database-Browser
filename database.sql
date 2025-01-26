@@ -11,8 +11,8 @@ CREATE TABLE Customers (
     CustomerID INTEGER PRIMARY KEY,
     FirstName VARCHAR(50) NOT NULL,
     LastName VARCHAR(50) NOT NULL,
-    Email VARCHAR(100) UNIQUE NOT NULL,
-    PhoneNumber VARCHAR(15),
+    Email VARCHAR(100) UNIQUE NOT NULL CHECK (Email LIKE '%@%'),
+    PhoneNumber VARCHAR(20) UNIQUE NOT NULL,
     AddressID INTEGER,
     FOREIGN KEY (AddressID) REFERENCES Addresses(AddressID) ON DELETE SET NULL
 );
@@ -22,8 +22,8 @@ CREATE TABLE Staff (
     FirstName VARCHAR(50) NOT NULL,
     LastName VARCHAR(50) NOT NULL,
     Role VARCHAR(50) NOT NULL,
-    Email VARCHAR(100) UNIQUE NOT NULL,
-    PhoneNumber VARCHAR(15),
+    Email VARCHAR(100) UNIQUE NOT NULL CHECK (Email LIKE '%@%'),
+    PhoneNumber VARCHAR(20) UNIQUE NOT NULL,
     Salary DECIMAL(10, 2) NOT NULL,
     HireDate DATE NOT NULL,
     AddressID INTEGER,
@@ -34,8 +34,8 @@ CREATE TABLE Suppliers (
     SupplierID INTEGER PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
     ContactName VARCHAR(50),
-    ContactEmail VARCHAR(100),
-    PhoneNumber VARCHAR(15),
+    ContactEmail VARCHAR(100) UNIQUE NOT NULL CHECK (ContactEmail LIKE '%@%'),
+    PhoneNumber VARCHAR(20) UNIQUE NOT NULL,
     AddressID INTEGER,
     FOREIGN KEY (AddressID) REFERENCES Addresses(AddressID) ON DELETE SET NULL
 );
@@ -62,6 +62,7 @@ CREATE TABLE MenuItems (
     Description VARCHAR(500),
     Price DECIMAL(10, 2) NOT NULL,
     Availability VARCHAR(20) NOT NULL,
+    Image BLOB NOT NULL,
     FOREIGN KEY (MenuID) REFERENCES Menus(MenuID) ON DELETE CASCADE
 );
 
@@ -121,8 +122,8 @@ CREATE TABLE FinancialRecords (
     RecordType VARCHAR(50) NOT NULL CHECK (RecordType IN ('Revenue', 'Expense')),
     Description TEXT NOT NULL,
     Amount DECIMAL(10, 2) NOT NULL,
-    RelatedID INTEGER, -- Can be used to reference Orders, Suppliers, etc.
-    RelatedType VARCHAR(50) -- Type of the related record, e.g., 'Order', 'Supplier'
+    RelatedID INTEGER, 
+    RelatedType VARCHAR(50) 
 );
 
 INSERT INTO Addresses (Street, City, State, ZipCode, Country) VALUES
@@ -143,7 +144,7 @@ INSERT INTO Addresses (Street, City, State, ZipCode, Country) VALUES
 ('1212 Cherry Cir', 'Cherryville', 'NJ', '07002', 'USA');
 
 INSERT INTO Customers (FirstName, LastName, Email, PhoneNumber, AddressID) VALUES
-('John', 'Doe', 'john@example.com', '1234567890', 1),
+('John', 'Cat', 'john@example.com', '1234567890', 1),
 ('Jane', 'Smith', 'jane@example.com', '9876543210', 2),
 ('Alice', 'Johnson', 'alice@example.com', '4567891230', 3),
 ('Bob', 'White', 'bob@example.com', '6543217890', 4),
@@ -177,12 +178,12 @@ INSERT INTO Menus (Name, Description) VALUES
 ('Kids Menu', 'Fun and delicious meals for kids'),
 ('Dessert Menu', 'Sweet treats to end your meal');
 
-INSERT INTO MenuItems (MenuID, Name, Description, Price, Availability) VALUES
-(1,'Margherita Pizza', 'Classic pizza with fresh mozzarella and basil', 5.99,'Unavailable'),
-(2,'Lasagna Bolognese', 'Traditional layered pasta with meat sauce', 9.99,'Available'),
-(3,'Grilled Branzino', 'Fresh Mediterranean sea bass with herbs', 14.99,'Available'),
-(4,'Arancini', 'Crispy risotto balls stuffed with cheese', 6.49,'Available'),
-(5,'Tiramisu', 'Classic Italian dessert with coffee and mascarpone', 4.99,'Available');
+INSERT INTO MenuItems (MenuID, Name, Description, Price, Availability,Image) VALUES
+(1,'Margherita Pizza', 'Classic pizza with fresh mozzarella and basil', 5.99,'Unavailable','x'),
+(2,'Lasagna Bolognese', 'Traditional layered pasta with meat sauce', 9.99,'Available','x'),
+(3,'Grilled Branzino', 'Fresh Mediterranean sea bass with herbs', 14.99,'Available','x'),
+(4,'Arancini', 'Crispy risotto balls stuffed with cheese', 6.49,'Available','x'),
+(5,'Tiramisu', 'Classic Italian dessert with coffee and mascarpone', 4.99,'Available','x');
 
 INSERT INTO MenuIngredients (IngredientID, Quantity) VALUES
 (4, 0.2),
@@ -244,8 +245,6 @@ BEGIN
     VALUES (NEW.OrderID, NEW.TotalAmount, NEW.PaymentMethod);
 END;
 
--------------------------------------------------------------------------------------
-
 CREATE TRIGGER update_stock_quantity_after_order
 AFTER INSERT ON OrderDetails
 FOR EACH ROW
@@ -265,8 +264,6 @@ BEGIN
     );
 END;
 
--------------------------------------------------------------------------------------
-
 CREATE TRIGGER after_insert_payments
 AFTER INSERT ON Payments
 FOR EACH ROW
@@ -280,8 +277,6 @@ BEGIN
         'Order'
     );
 END;
-
---------------------------------------------------------------------------------------
 
 CREATE VIEW OrdersSummary AS
 SELECT 
@@ -298,8 +293,6 @@ LEFT JOIN
 LEFT JOIN 
     Staff ON Orders.StaffID = Staff.StaffID;
 
--------------------------------------------------------------------------------------
-
 CREATE VIEW IngredientStockLevels AS
 SELECT 
     Ingredients.IngredientID, 
@@ -311,8 +304,6 @@ FROM
     Ingredients
 LEFT JOIN 
     Suppliers ON Ingredients.SupplierID = Suppliers.SupplierID;
-
--------------------------------------------------------------------------------------
 
 CREATE VIEW MenuItemsWithIngredients AS
 SELECT 
@@ -332,7 +323,6 @@ JOIN
 JOIN 
     Ingredients ON MenuIngredients.IngredientID = Ingredients.IngredientID;
 
------------------------------------------
 CREATE VIEW FinancialSummary AS
 SELECT 
     RecordType, 
@@ -342,7 +332,7 @@ FROM
     FinancialRecords
 GROUP BY 
     RecordType;
------------------------------------------
+
 CREATE VIEW FinancialDetails AS
 SELECT 
     RecordID, 
