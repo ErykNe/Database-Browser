@@ -154,7 +154,100 @@ def export_db():
             messagebox.showerror("Error", f"Failed to export to SQL file: {str(e)}")
     
     def export_db_to_xml_file(file_name, selected_path):
-        print("exporting to xml file")        
+        # Ensure that the SQLite connection and cursor are valid
+        if not sqlite or not kursor:
+            messagebox.showerror("Error", "Database connection is not established.")
+            return
+
+        # Determine the file path for the new XML file
+        xml_file_path = os.path.join(selected_path, f"{file_name}.xml")
+
+        try:
+            # Open the XML file for writing
+            with open(xml_file_path, 'w', encoding='utf-8') as xml_file:
+                # Write the XML header
+                xml_file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+                xml_file.write('<database>\n')
+
+                # Export tables and their data
+                kursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                tables = kursor.fetchall()
+
+                for table in tables:
+                    table_name = table[0]
+                    xml_file.write(f'  <table name="{table_name}">\n')
+
+                    # Get table columns
+                    kursor.execute(f"PRAGMA table_info({table_name});")
+                    columns = kursor.fetchall()
+
+                    # Write table schema
+                    xml_file.write('    <schema>\n')
+                    for column in columns:
+                        col_name = column[1]
+                        col_type = column[2]
+                        is_pk = column[5]
+                        xml_file.write(f'      <column name="{col_name}" type="{col_type}" primary_key="{is_pk}" />\n')
+                    xml_file.write('    </schema>\n')
+
+                    # Write table data
+                    kursor.execute(f"SELECT * FROM {table_name};")
+                    rows = kursor.fetchall()
+                    column_names = [column[1] for column in columns]
+                    xml_file.write('    <data>\n')
+                    for row in rows:
+                        xml_file.write('      <row>\n')
+                        for col_name, value in zip(column_names, row):
+                            xml_file.write(f'        <{col_name}>{value}</{col_name}>\n')
+                        xml_file.write('      </row>\n')
+                    xml_file.write('    </data>\n')
+
+                    xml_file.write('  </table>\n')
+
+                # Export views
+                kursor.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
+                views = kursor.fetchall()
+
+                for view in views:
+                    view_name, view_sql = view
+                    xml_file.write(f'  <view name="{view_name}">\n')
+                    xml_file.write(f'    <definition>{view_sql}</definition>\n')
+                    xml_file.write('  </view>\n')
+                    
+                # Export triggers
+                kursor.execute("SELECT name, sql FROM sqlite_master WHERE type='trigger';")
+                triggers = kursor.fetchall()
+                for trigger in triggers:
+                    trigger_name, trigger_sql = trigger
+                    xml_file.write(f'  <trigger name="{trigger_name}">\n')
+                    xml_file.write(f'    <definition>{trigger_sql}</definition>\n')
+                    xml_file.write('  </trigger>\n')
+
+                # Close the database XML tag
+                xml_file.write('</database>\n')
+    
+
+                # Export relationships (foreign keys)
+                for table in tables:
+                    table_name = table[0]
+                    kursor.execute(f"PRAGMA foreign_key_list({table_name});")
+                    foreign_keys = kursor.fetchall()
+                    if foreign_keys:
+                        xml_file.write(f'  <relations table="{table_name}">\n')
+                        for fk in foreign_keys:
+                            xml_file.write(
+                                f'    <foreign_key column="{fk[3]}" references_table="{fk[2]}" references_column="{fk[4]}" />\n'
+                            )
+                        xml_file.write('  </relations>\n')
+
+                # Close the database XML tag
+                xml_file.write('</database>\n')
+
+        # Success message
+            messagebox.showinfo("Success", f"Database exported to XML file at: {xml_file_path}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export to XML file: {str(e)}")
 
     # Confirm Button
     def confirm_export():
@@ -505,7 +598,101 @@ def create_db_from_sql(sql_file):
 
     except sqlite3.Error as e:
         messagebox.showerror("Error","Error creating database: {e}")
-        
+
+def create_db_from_xml(xml_file):
+    global sqlite, kursor
+    try:
+        # Remove temp.db if it exists
+        if os.path.exists("temp.db"):
+            os.remove("temp.db")
+
+        # Create a new SQLite database
+        sqlite = sqlite3.connect("temp.db")
+        kursor = sqlite.cursor()
+
+        # Enable foreign key constraints
+        kursor.execute("PRAGMA foreign_keys = ON;")
+
+        # Parse the XML file
+        with open(xml_file, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Extract content up to the closing </database> tag
+        if "</database>" in content:
+            valid_xml = content.split("</database>")[0] + "</database>"
+        else:
+            raise ET.ParseError("Missing closing </database> tag.")
+
+        # Parse the valid portion of the XML
+        root = ET.fromstring(valid_xml)
+
+        # Parse relationships for foreign key constraints
+        relations = {}
+        for relation in root.findall("relations"):
+            table_name = relation.get("table")
+            foreign_keys = []
+            for fk in relation.findall("foreign_key"):
+                column = fk.get("column")
+                ref_table = fk.get("references_table")
+                ref_column = fk.get("references_column")
+                foreign_keys.append(f"FOREIGN KEY ({column}) REFERENCES {ref_table}({ref_column})")
+            relations[table_name] = foreign_keys
+
+        # Create tables and insert data
+        for table in root.findall("table"):
+            table_name = table.get("name")
+
+            # Create table schema
+            schema = table.find("schema")
+            columns = []
+            for column in schema.findall("column"):
+                col_name = column.get("name")
+                col_type = column.get("type")
+                is_pk = "PRIMARY KEY" if column.get("primary_key") == "1" else ""
+                columns.append(f"{col_name} {col_type} {is_pk}".strip())
+
+            # Add foreign key constraints if any
+            if table_name in relations:
+                columns += relations[table_name]
+
+            create_table_sql = f"CREATE TABLE {table_name} ({', '.join(columns)});"
+            kursor.execute(create_table_sql)
+
+            # Insert table data
+            data = table.find("data")
+            if data is not None:
+                for row in data.findall("row"):
+                    col_names = []
+                    col_values = []
+                    for col in row:
+                        col_names.append(col.tag)
+                        col_values.append(col.text)
+
+                    insert_sql = f"INSERT INTO {table_name} ({', '.join(col_names)}) VALUES ({', '.join(['?' for _ in col_values])});"
+                    kursor.execute(insert_sql, col_values)
+
+        # Create views
+        for view in root.findall("view"):
+            view_name = view.get("name")
+            view_definition = view.find("definition").text
+            kursor.execute(view_definition)
+
+        # Create triggers
+        for trigger in root.findall("trigger"):
+            trigger_name = trigger.get("name")
+            trigger_definition = trigger.find("definition").text
+            kursor.execute(trigger_definition)
+
+        # Commit changes
+        sqlite.commit()
+        messagebox.showinfo("Success", "Database created successfully from XML file with foreign keys!")
+
+    except sqlite3.Error as e:
+        messagebox.showerror("Error", f"SQLite Error: {e}")
+    except ET.ParseError as e:
+        messagebox.showerror("Error", f"XML Parse Error: {e}")
+    except Exception as e:
+        messagebox.showerror("Error", f"Unexpected Error: {e}") 
 
 def import_db():
     global sqlite, kursor, inputtxt, outputtxt, printButton, combo, m, label_treedata, result_label
@@ -723,6 +910,50 @@ def import_table_from_csv():
         Button(import_window, text="Import", command=start_import).grid(row=4, columnspan=2)
 
 
+def import_db_from_xml():    
+    global sqlite, kursor, inputtxt, printButton, m
+
+    db_path = filedialog.askopenfilename(
+        title="Select a .xml file",
+        filetypes=[("Extensible Markup Language File", "*.xml")]
+    )
+    
+    if db_path:  
+        try:
+            if(sqlite):
+                sqlite.close()
+            
+            create_db_from_xml(db_path)
+            result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = [str(table[0]) for table in result.fetchall()]
+
+            combo.set("Select table")
+            combo.config(values=tables)
+            m.title("SQLite Database Manager - " + str(db_path))
+            
+            printButton.pack(side='top', pady=5, anchor='w')
+
+            # Use grid to place inputtxt and result_label next to each other
+            inputtxt.pack(side='top', pady=5, anchor='w', fill='x')  # 'ew' stretches inputtxt horizontally
+            result_label.pack(anchor='w',fill='both')  # 'ew' stretches result_label horizontally
+            children = result_label.winfo_children()
+            if len(children) > 2:
+                children[2].destroy()
+                
+            tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
+            tree.pack(anchor='w', side='top',fill='both')
+            outputtxt.pack(side='top', pady=5, anchor='w', fill='both')
+
+            combo.pack(side='top', pady=0, padx=0, anchor='w')
+            label_treedata.pack(side='top', padx=0, pady=0, fill='both', expand=True)
+            label_db_struct.config(bg='white')
+            get_database_structure()
+            children = label_treedata.winfo_children()
+            if len(children) > 2:
+                children[2].destroy() 
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Error connecting to database: {e}")
+            import_db_from_xml()       
             
 def import_db_from_sql():    
     global sqlite, kursor, inputtxt, printButton, m
@@ -862,6 +1093,7 @@ importmenu = Menu(menuBar, tearoff=0)
 
 database_submenu = Menu(importmenu, tearoff=0)
 database_submenu.add_command(label="From SQL File", command=import_db_from_sql)
+database_submenu.add_command(label="From XML File", command=import_db_from_xml)
 
 importmenu.add_cascade(label="Database", menu=database_submenu)
 
