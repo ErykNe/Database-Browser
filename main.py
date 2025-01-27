@@ -1,3 +1,4 @@
+import base64
 import csv
 import os
 import tkinter
@@ -137,22 +138,16 @@ def export_db():
             messagebox.showerror("Error", f"Failed to export to SQL file: {str(e)}")
     
     def export_db_to_xml_file(file_name, selected_path):
-        # Ensure that the SQLite connection and cursor are valid
         if not sqlite or not kursor:
             messagebox.showerror("Error", "Database connection is not established.")
             return
-
-        # Determine the file path for the new XML file
         xml_file_path = os.path.join(selected_path, f"{file_name}.xml")
-
         try:
-            # Open the XML file for writing
+            # open XML file to write data
             with open(xml_file_path, 'w', encoding='utf-8') as xml_file:
-                # Write the XML header
                 xml_file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-                xml_file.write('<database>\n')
+                xml_file.write('<dataset>\n')
 
-                # Export tables and their data
                 kursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
                 tables = kursor.fetchall()
 
@@ -160,74 +155,75 @@ def export_db():
                     table_name = table[0]
                     xml_file.write(f'  <table name="{table_name}">\n')
 
-                    # Get table columns
                     kursor.execute(f"PRAGMA table_info({table_name});")
                     columns = kursor.fetchall()
 
-                    # Write table schema
+                    # write table schema (datatypes)
                     xml_file.write('    <schema>\n')
                     for column in columns:
-                        col_name = column[1]
-                        col_type = column[2]
-                        is_pk = column[5]
-                        xml_file.write(f'      <column name="{col_name}" type="{col_type}" primary_key="{is_pk}" />\n')
+                        column_name = column[1]
+                        column_type = column[2]
+                        pk = column[5]
+                        xml_file.write(f'      <column name="{column_name}" type="{column_type}" primary_key="{pk}" />\n')
                     xml_file.write('    </schema>\n')
 
-                    # Write table data
+                    # write tables
                     kursor.execute(f"SELECT * FROM {table_name};")
                     rows = kursor.fetchall()
                     column_names = [column[1] for column in columns]
                     xml_file.write('    <data>\n')
                     for row in rows:
-                        xml_file.write('      <row>\n')
-                        for col_name, value in zip(column_names, row):
-                            xml_file.write(f'        <{col_name}>{value}</{col_name}>\n')
-                        xml_file.write('      </row>\n')
+                        xml_file.write('      <record>\n')
+                        for column_name, value in zip(column_names, row):
+                            # encode data
+                            if value is not None:
+                                if isinstance(value, bytes):  # check if it's a BLOB
+                                    # encode the BLOB 
+                                    encoded = base64.b64encode(value).decode('utf-8')
+                                else:
+                                    # encode the other data
+                                    encoded = base64.b64encode(str(value).encode('utf-8')).decode('utf-8')
+                                xml_file.write(f'        <{column_name}>{encoded}</{column_name}>\n')
+                            else:
+                                xml_file.write(f'        <{column_name}></{column_name}>\n')
+                        xml_file.write('      </record>\n')
                     xml_file.write('    </data>\n')
 
                     xml_file.write('  </table>\n')
 
-                # Export views
+                # export views
                 kursor.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
                 views = kursor.fetchall()
 
                 for view in views:
                     view_name, view_sql = view
                     xml_file.write(f'  <view name="{view_name}">\n')
-                    xml_file.write(f'    <definition>{view_sql}</definition>\n')
+                    xml_file.write(f'    <schema>{view_sql}</schema>\n')
                     xml_file.write('  </view>\n')
                     
-                # Export triggers
+                # exporting triggers
                 kursor.execute("SELECT name, sql FROM sqlite_master WHERE type='trigger';")
                 triggers = kursor.fetchall()
                 for trigger in triggers:
                     trigger_name, trigger_sql = trigger
                     xml_file.write(f'  <trigger name="{trigger_name}">\n')
-                    xml_file.write(f'    <definition>{trigger_sql}</definition>\n')
+                    xml_file.write(f'    <schema>{trigger_sql}</schema>\n')
                     xml_file.write('  </trigger>\n')
-
-                # Close the database XML tag
-                xml_file.write('</database>\n')
-    
-
-                # Export relationships (foreign keys)
+                    
+                # export relationships (foreign keys)
                 for table in tables:
                     table_name = table[0]
                     kursor.execute(f"PRAGMA foreign_key_list({table_name});")
                     foreign_keys = kursor.fetchall()
                     if foreign_keys:
-                        xml_file.write(f'  <relations table="{table_name}">\n')
+                        xml_file.write(f'  <relation table="{table_name}">\n')
                         for fk in foreign_keys:
                             xml_file.write(
                                 f'    <foreign_key column="{fk[3]}" references_table="{fk[2]}" references_column="{fk[4]}" />\n'
                             )
-                        xml_file.write('  </relations>\n')
+                        xml_file.write('  </relation>\n')
 
-                # Close the database XML tag
-                xml_file.write('</database>\n')
-
-        # Success message
-            messagebox.showinfo("Success", f"Database exported to XML file at: {xml_file_path}")
+                xml_file.write('</dataset>\n')
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to export to XML file: {str(e)}")
@@ -284,14 +280,12 @@ def create_column(table_name):
     variables = []
     
     def create_column_in_db(table_name, variables):
-  
         column_name = variables[0].get() 
         column_type = variables[1].get()  
         default_value = variables[2].get()  
         nn = variables[3].get() 
         pk = variables[4].get()  
         ai = variables[5].get() 
-
         try:
             query = f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
 
@@ -310,7 +304,6 @@ def create_column(table_name):
             kursor.execute(query)
             sqlite.commit()
             get_database_structure()
-
             messagebox.showinfo("Success", f"Column '{column_name}' added to table '{table_name}'.")
 
         except Exception as e:
@@ -412,34 +405,65 @@ def create_table():
 
     def execute_create_table_query():
         if not widgets or widgets == []:
-            messagebox.showerror("Error",f"Error creating table: No columns provided")
+            messagebox.showerror("Error", "Error creating table: No columns provided")
             return
-        query = f"CREATE TABLE {name_entry.get()} ("
 
-        for variables in variables:
-            column_name = variables[0].get().strip()
-            column_type = variables[1].get().strip()
-            nn = "NOT NULL" if variables[2].get() == 1 else ""
-            pk = "PRIMARY KEY" if variables[3].get() == 1 else ""
-            ai = "AUTOINCREMENT" if variables[4].get() == 1 and variables[3].get() != 1 else ""
-            default_value = f"DEFAULT '{variables[5].get()}'" if variables[5].get() != "" else ""
+        table_name = name_entry.get().strip()
+        if not table_name:
+            messagebox.showerror("Error", "Error creating table: Table name cannot be empty")
+            return
 
-            column_definition = f"{column_name} {column_type} {nn} {pk} {ai} {default_value}".strip()
-
-            query += column_definition + ", "
-
-        query = query.rstrip(", ") + ");"
+        query = f"CREATE TABLE {table_name} ("
+        column_definitions = []
 
         try:
-            kursor.execute(query)
-            sqlite.commit()
-            messagebox.showinfo("Success", f"Successfully created table '{name_entry.get()}'.")
-            combo['values'] = [name_entry.get()] + list(combo['values'])
-            combo.set(name_entry.get())
-            create_window.destroy()
-            get_database_structure()
-        except sqlite3.Error as e:
-            messagebox.showerror("Error",f"Error creating table: {e}")
+            for idx, variables in enumerate(widgets):
+                column_name = variables[0].get().strip()
+                column_type = variables[1].get().strip()
+                not_null = "NOT NULL" if variables[2].get() == 1 else ""
+                primary_key = "PRIMARY KEY" if variables[3].get() == 1 else ""
+                auto_increment = "AUTOINCREMENT" if variables[4].get() == 1 and column_type.upper() == "INTEGER" else ""
+                default_value = f"DEFAULT '{variables[5].get()}'" if variables[5].get() != "" else ""
+
+                if not column_name:
+                    messagebox.showerror("Error", f"Error in column {idx + 1}: Column name cannot be empty.")
+                    return
+                if not column_name.isidentifier():
+                    messagebox.showerror("Error", f"Error in column {idx + 1}: Invalid column name '{column_name}'.")
+                    return
+
+                if auto_increment and not primary_key:
+                    messagebox.showerror(
+                        "Error", f"Error in column {idx + 1}: AUTOINCREMENT requires the column to be a PRIMARY KEY."
+                    )
+                    return
+
+                if default_value and column_type.upper() == "INTEGER":
+                    try:
+                        int(variables[5].get())  
+                    except ValueError:
+                        messagebox.showerror(
+                            "Error", f"Error in column {idx + 1}: Default value '{variables[5].get()}' is not a valid INTEGER."
+                        )
+                        return
+
+                column_definition = f"{column_name} {column_type} {not_null} {primary_key} {auto_increment} {default_value}".strip()
+                column_definitions.append(column_definition)
+
+                query += ", ".join(column_definitions) + ");"
+
+                try:
+                    kursor.execute(query)
+                    sqlite.commit()
+                    messagebox.showinfo("Success", f"Successfully created table '{table_name}'.")
+                    combo['values'] = [table_name] + list(combo['values'])
+                    combo.set(table_name)
+                    create_window.destroy()
+                    get_database_structure()
+                except sqlite3.Error as e:
+                    messagebox.showerror("Error", f"Error creating table: {e}")
+        except: 
+            messagebox.showerror("Error", f"Error creating table: Invalid or Insufficient data.")  
 
             
 
@@ -551,30 +575,51 @@ def get_database_structure():
             menu.post(event.x_root, event.y_root)
 
     tree.bind("<Button-3>", right_click)
+
+def get_file_extension_from_blob(blob_data):
+    # getting the image extension from blob data by interpretation of magic numbers
+    if blob_data.startswith(b'\x89PNG'):
+        return 'png'
     
+    elif blob_data.startswith(b'\xFF\xD8\xFF'):
+        return 'jpg'
+    
+    elif blob_data.startswith(b'GIF'):
+        return 'gif'
+   
+    return 'bin'
+
+def download_blob(blob_data, file_extension=None):
+    try:
+        if not file_extension:
+            file_extension = get_file_extension_from_blob(blob_data) 
+
+            if not file_extension:
+                file_extension = "bin"
+        
+        file_path = filedialog.asksaveasfilename(defaultextension=f".{file_extension}", 
+                                                 filetypes=[(f"{file_extension.upper()} files", f"*.{file_extension}")])
+        if file_path:
+            with open(file_path, 'wb') as file:
+                file.write(blob_data)
+            messagebox.showinfo("Success", f"File successfully saved to {file_path}")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to save file: {str(e)}")
+            
 def switch_tables(event):
-    global combo, sqlite, kursor, label_browse_data, label_treedata
+    global combo, sqlite, kursor, label_browse_data, label_treedata, h1, v1
     
     selection = combo.get()
     query = f"SELECT * FROM {selection}"
     
     result = kursor.execute(query).fetchall()
-    sqlite.commit()
     columns = [description[1] for description in kursor.execute(f"PRAGMA table_info({selection})").fetchall()]
-    sqlite.commit(
-        
-        
-    )
-    print(columns)
     
     children = label_treedata.winfo_children()
     if len(children) > 2:
         children[2].destroy() 
     
-
-    tree = ttk.Treeview(label_treedata,
-                 xscrollcommand = h1.set, 
-                 yscrollcommand = v1.set)
+    tree = ttk.Treeview(label_treedata, xscrollcommand=h1.set, yscrollcommand=v1.set)
     
     h1.config(command=tree.xview)
     v1.config(command=tree.yview)
@@ -582,20 +627,57 @@ def switch_tables(event):
     tree["columns"] = columns
     tree["show"] = "headings"
     
-    max_lengths = [len(col) for col in columns]  
+    max_lengths = [len(col) for col in columns]
+    
+    column_types = [desc[2] for desc in kursor.execute(f"PRAGMA table_info({selection})").fetchall()]
     
     for row in result:
         for i, value in enumerate(row):
-            max_lengths[i] = max(max_lengths[i], len(str(value))) 
+            max_lengths[i] = max(max_lengths[i], len(str(value)))
     
     for i, col in enumerate(columns):
-        tree.heading(col, text=col) 
-        tree.column(col, width=max(max_lengths[i] * 10, 100), anchor="center", stretch=False)  
+        width = max(max_lengths[i] * 10, 100)
+        if column_types[i] == "BLOB":
+            width = 100
+        tree.heading(col, text=col)
+        tree.column(col, width=width, anchor="center", stretch=False)
     
-    for row in result:
-        tree.insert('', 'end', values=row)
+    def on_cell_click(event):
+        # get the clicked item (row) and column
+        tree = event.widget
+        item_id = tree.identify_row(event.y)  
+        column_id = tree.identify_column(event.x) 
+
+        if item_id and column_id:
+            # get the column index and row index
+            col_index = int(column_id[1:]) - 1
+            row_index = int(item_id[1:]) - 1
+            if row_index < 0 or row_index >= len(result):
+                return 
+            
+            # get the data from the clicked row and column
+            row_values = result[row_index]  
+            value = row_values[col_index]  
         
-    tree.pack(padx=0, pady=0, anchor='w')    
+        
+            if column_types[col_index] == "BLOB": # if it was blob then download it
+                download_blob(value)
+
+    for row in result:
+        values = []
+        for i, value in enumerate(row):
+            if column_types[i] == "BLOB" and value:
+                values.append("BLOB")
+            else:
+                values.append(value)
+        
+        tree.insert('', 'end', values=values, tags=[f'row_{row[0]}'])
+    
+    tree.pack(padx=0, pady=0, anchor='w')
+    
+    # bind the click event for handling blob files 
+    tree.bind("<Button-1>", on_cell_click)
+        
 
 def switch_view(view):
     global m, nav_db_struct, nav_browse_data, nav_sql, label_sql, label_browse_data, label_db_struct
@@ -646,33 +728,28 @@ def create_db_from_sql(sql_file):
 def create_db_from_xml(xml_file):
     global sqlite, kursor
     try:
-        # Remove temp.db if it exists
         if os.path.exists("temp.db"):
             os.remove("temp.db")
 
-        # Create a new SQLite database
         sqlite = sqlite3.connect("temp.db")
         kursor = sqlite.cursor()
-
-        # Enable foreign key constraints
+        
         kursor.execute("PRAGMA foreign_keys = ON;")
 
-        # Parse the XML file
         with open(xml_file, "r", encoding="utf-8") as f:
             content = f.read()
-
-        # Extract content up to the closing </database> tag
-        if "</database>" in content:
-            valid_xml = content.split("</database>")[0] + "</database>"
+        
+        # extracting data to the closing </dataset> tag
+        if "</dataset>" in content:
+            valid_xml = content.split("</dataset>")[0] + "</dataset>"
         else:
-            raise ET.ParseError("Missing closing </database> tag.")
+            raise ET.ParseError("Missing closing </dataset> tag.")
 
-        # Parse the valid portion of the XML
+        # ET parse the valid XML
         root = ET.fromstring(valid_xml)
 
-        # Parse relationships for foreign key constraints
         relations = {}
-        for relation in root.findall("relations"):
+        for relation in root.findall("relation"):
             table_name = relation.get("table")
             foreign_keys = []
             for fk in relation.findall("foreign_key"):
@@ -682,11 +759,11 @@ def create_db_from_xml(xml_file):
                 foreign_keys.append(f"FOREIGN KEY ({column}) REFERENCES {ref_table}({ref_column})")
             relations[table_name] = foreign_keys
 
-        # Create tables and insert data
+        # create tables and insert data
         for table in root.findall("table"):
             table_name = table.get("name")
 
-            # Create table schema
+            # create table accordingly with schema
             schema = table.find("schema")
             columns = []
             for column in schema.findall("column"):
@@ -695,39 +772,45 @@ def create_db_from_xml(xml_file):
                 is_pk = "PRIMARY KEY" if column.get("primary_key") == "1" else ""
                 columns.append(f"{col_name} {col_type} {is_pk}".strip())
 
-            # Add foreign key constraints if any
+            # add foreign keys
             if table_name in relations:
                 columns += relations[table_name]
 
             create_table_sql = f"CREATE TABLE {table_name} ({', '.join(columns)});"
             kursor.execute(create_table_sql)
 
-            # Insert table data
+            # insert table records
             data = table.find("data")
             if data is not None:
-                for row in data.findall("row"):
+                for row in data.findall("record"):
                     col_names = []
                     col_values = []
                     for col in row:
                         col_names.append(col.tag)
-                        col_values.append(col.text)
+                        encrypted = col.text
+                        if encrypted:
+                            # decode the Base64 
+                            decoded = base64.b64decode(encrypted)
+                            try:
+                                decoded = decoded.decode('utf-8')  
+                            except UnicodeDecodeError:
+                                pass 
+                            col_values.append(decoded)
+                        else:
+                            col_values.append(None)  
 
-                    insert_sql = f"INSERT INTO {table_name} ({', '.join(col_names)}) VALUES ({', '.join(['?' for _ in col_values])});"
-                    kursor.execute(insert_sql, col_values)
+                    # insert the decoded value into the database
+                    insert_sql = f"INSERT INTO {table_name} ({', '.join(col_names)}) VALUES ({', '.join(['?' for _ in col_names])});"
+                    kursor.execute(insert_sql, tuple(col_values))
 
-        # Create views
         for view in root.findall("view"):
-            view_name = view.get("name")
-            view_definition = view.find("definition").text
+            view_definition = view.find("schema").text
             kursor.execute(view_definition)
 
-        # Create triggers
         for trigger in root.findall("trigger"):
-            trigger_name = trigger.get("name")
-            trigger_definition = trigger.find("definition").text
+            trigger_definition = trigger.find("schema").text
             kursor.execute(trigger_definition)
 
-        # Commit changes
         sqlite.commit()
         messagebox.showinfo("Success", "Database created successfully from XML file with foreign keys!")
 
@@ -736,7 +819,7 @@ def create_db_from_xml(xml_file):
     except ET.ParseError as e:
         messagebox.showerror("Error", f"XML Parse Error: {e}")
     except Exception as e:
-        messagebox.showerror("Error", f"Unexpected Error: {e}") 
+        messagebox.showerror("Error", f"Unexpected Error: {e}")
 
 def import_db():
     global sqlite, kursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata, result_label
@@ -761,7 +844,7 @@ def import_db():
             combo.set("Select table")
             combo.config(values=tables)
             
-            m.title("SQLite Database Manager - " + str(db_path)) # config all neccesseary things 
+            m.title("SQLite Database Manager - " + str(db_path)) # config all neccesseary widgets
             print_button.pack(side='top', pady=5, anchor='w')
             sql_input_textbox.pack(side='top', pady=5, anchor='w', fill='x')  
             result_label.pack(anchor='w',fill='both') 
@@ -1040,8 +1123,26 @@ def execute_query():
             messagebox.showerror("Error", "No query typed in")
             return
         try:
-            kursor.execute(query)
+            if "blob(" in query.lower():
+                    start = query.lower().find("blob(") + 5
+                    end = query.lower().find(")", start)
+                    if start > 0 and end > 0:
+                        image_path = query[start + 1: end - 1]  
+                        if os.path.exists(image_path):  
+                            with open(image_path, "rb") as file:
+                                blob_data = file.read()
 
+                            query = query[:start - 5] + f"X'{blob_data.hex()}'" + query[end + 1:]
+                            print(query)
+                        else:
+                            messagebox.showerror("Error", f"Image file not found: {image_path}")
+                            return
+                    else:
+                        messagebox.showerror("Error", "Invalid BLOB function or image path in query.")
+                        return    
+                    
+            kursor.execute(query)
+            
             # checking if its a select query to create treeview displaying the output 
             if query.lower().startswith("select"):
                 result = kursor.fetchall()
@@ -1057,7 +1158,8 @@ def execute_query():
                     sql_output_textbox.config(state='disabled')
 
                     columns = [desc[0] for desc in kursor.description] 
-
+                    column_types = [desc[2] for desc in kursor.execute(f"PRAGMA table_info({query.split('FROM ')[1].split()[0]})")]
+                    print(column_types)
 
                     tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
                     tree["show"] = "headings"
@@ -1069,10 +1171,38 @@ def execute_query():
                         tree.column(col, width=100, anchor="center", stretch=False)
 
                     for row in result:
-                        tree.insert("", "end", values=row)
+                        values = []
+                        for i, value in enumerate(row):
+                            if column_types[i] == "BLOB" and value:
+                                values.append("BLOB")
+                            else:
+                                values.append(value)
+                        tree.insert('', 'end', values=values, tags=[f'row_{i}_{row[0]}'])
+                        
+                    def on_cell_click(event):
+                        # get the clicked item (row) and column
+                        tree = event.widget
+                        item_id = tree.identify_row(event.y)  
+                        column_id = tree.identify_column(event.x) 
+
+                        if item_id and column_id:
+                            # get the column index and row index
+                            col_index = int(column_id[1:]) - 1
+                            row_index = int(item_id[1:]) - 1
+                            if row_index < 0 or row_index >= len(result):
+                                return 
+            
+                            # get the data from the clicked row and column
+                            row_values = result[row_index]  
+                            value = row_values[col_index]  
+        
+        
+                            if column_types[col_index] == "BLOB": # if it was blob then download it
+                                download_blob(value)    
 
 
                     tree.grid(row=0, column=0, sticky="nsew")
+                    tree.bind("<Button-1>", on_cell_click)
 
                     h3 = ttk.Scrollbar(result_label, orient="horizontal", command=tree.xview)
                     v3 = ttk.Scrollbar(result_label, orient="vertical", command=tree.yview)
@@ -1090,6 +1220,8 @@ def execute_query():
                     sql_output_textbox.insert("insert", f"No results found for query:\n{query}\n")
                     sql_output_textbox.config(state="disabled")
             else: #for other queries
+                for child in result_label.winfo_children():
+                    child.destroy()
                 sqlite.commit()
                 get_database_structure()
                 sql_output_textbox.config(state='normal')

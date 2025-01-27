@@ -1,0 +1,900 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dataset>
+  <table name="Addresses">
+    <schema>
+      <column name="AddressID" type="INTEGER" primary_key="1" />
+      <column name="Street" type="VARCHAR(200)" primary_key="0" />
+      <column name="City" type="VARCHAR(100)" primary_key="0" />
+      <column name="State" type="VARCHAR(100)" primary_key="0" />
+      <column name="ZipCode" type="VARCHAR(20)" primary_key="0" />
+      <column name="Country" type="VARCHAR(100)" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <AddressID>1</AddressID>
+        <Street>123 Elm Street</Street>
+        <City>Springfield</City>
+        <State>IL</State>
+        <ZipCode>62701</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>2</AddressID>
+        <Street>456 Oak Avenue</Street>
+        <City>Hometown</City>
+        <State>CA</State>
+        <ZipCode>90210</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>3</AddressID>
+        <Street>789 Pine Road</Street>
+        <City>Cityville</City>
+        <State>NY</State>
+        <ZipCode>10001</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>4</AddressID>
+        <Street>101 Maple Lane</Street>
+        <City>Seaside</City>
+        <State>FL</State>
+        <ZipCode>33101</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>5</AddressID>
+        <Street>202 Birch Blvd</Street>
+        <City>Crustown</City>
+        <State>TX</State>
+        <ZipCode>73301</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>6</AddressID>
+        <Street>303 Cedar St</Street>
+        <City>Greenville</City>
+        <State>SC</State>
+        <ZipCode>29601</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>7</AddressID>
+        <Street>404 Willow Way</Street>
+        <City>Fairview</City>
+        <State>OR</State>
+        <ZipCode>97024</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>8</AddressID>
+        <Street>505 Aspen Ave</Street>
+        <City>Lakeside</City>
+        <State>MI</State>
+        <ZipCode>49116</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>9</AddressID>
+        <Street>606 Redwood Rd</Street>
+        <City>Hilltop</City>
+        <State>CO</State>
+        <ZipCode>80021</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>10</AddressID>
+        <Street>707 Fir Ln</Street>
+        <City>Meadowbrook</City>
+        <State>PA</State>
+        <ZipCode>19046</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>11</AddressID>
+        <Street>808 Spruce Dr</Street>
+        <City>Brookfield</City>
+        <State>CT</State>
+        <ZipCode>06804</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>12</AddressID>
+        <Street>909 Cypress Ct</Street>
+        <City>Stonebridge</City>
+        <State>GA</State>
+        <ZipCode>30024</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>13</AddressID>
+        <Street>1010 Palm St</Street>
+        <City>Palmview</City>
+        <State>FL</State>
+        <ZipCode>33176</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>14</AddressID>
+        <Street>1111 Pinewood Pl</Street>
+        <City>Woodland</City>
+        <State>WA</State>
+        <ZipCode>98674</ZipCode>
+        <Country>USA</Country>
+      </record>
+      <record>
+        <AddressID>15</AddressID>
+        <Street>1212 Cherry Cir</Street>
+        <City>Cherryville</City>
+        <State>NJ</State>
+        <ZipCode>07002</ZipCode>
+        <Country>USA</Country>
+      </record>
+    </data>
+  </table>
+  <table name="Customers">
+    <schema>
+      <column name="CustomerID" type="INTEGER" primary_key="1" />
+      <column name="FirstName" type="VARCHAR(50)" primary_key="0" />
+      <column name="LastName" type="VARCHAR(50)" primary_key="0" />
+      <column name="Email" type="VARCHAR(100)" primary_key="0" />
+      <column name="PhoneNumber" type="VARCHAR(20)" primary_key="0" />
+      <column name="AddressID" type="INTEGER" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <CustomerID>1</CustomerID>
+        <FirstName>John</FirstName>
+        <LastName>Cat</LastName>
+        <Email>john@example.com</Email>
+        <PhoneNumber>1234567890</PhoneNumber>
+        <AddressID>1</AddressID>
+      </record>
+      <record>
+        <CustomerID>2</CustomerID>
+        <FirstName>Jane</FirstName>
+        <LastName>Smith</LastName>
+        <Email>jane@example.com</Email>
+        <PhoneNumber>9876543210</PhoneNumber>
+        <AddressID>2</AddressID>
+      </record>
+      <record>
+        <CustomerID>3</CustomerID>
+        <FirstName>Alice</FirstName>
+        <LastName>Johnson</LastName>
+        <Email>alice@example.com</Email>
+        <PhoneNumber>4567891230</PhoneNumber>
+        <AddressID>3</AddressID>
+      </record>
+      <record>
+        <CustomerID>4</CustomerID>
+        <FirstName>Bob</FirstName>
+        <LastName>White</LastName>
+        <Email>bob@example.com</Email>
+        <PhoneNumber>6543217890</PhoneNumber>
+        <AddressID>4</AddressID>
+      </record>
+      <record>
+        <CustomerID>5</CustomerID>
+        <FirstName>Carol</FirstName>
+        <LastName>Davis</LastName>
+        <Email>carol@example.com</Email>
+        <PhoneNumber>7891234560</PhoneNumber>
+        <AddressID>5</AddressID>
+      </record>
+    </data>
+  </table>
+  <table name="Staff">
+    <schema>
+      <column name="StaffID" type="INTEGER" primary_key="1" />
+      <column name="FirstName" type="VARCHAR(50)" primary_key="0" />
+      <column name="LastName" type="VARCHAR(50)" primary_key="0" />
+      <column name="Role" type="VARCHAR(50)" primary_key="0" />
+      <column name="Email" type="VARCHAR(100)" primary_key="0" />
+      <column name="PhoneNumber" type="VARCHAR(20)" primary_key="0" />
+      <column name="Salary" type="DECIMAL(10, 2)" primary_key="0" />
+      <column name="HireDate" type="DATE" primary_key="0" />
+      <column name="AddressID" type="INTEGER" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <StaffID>1</StaffID>
+        <FirstName>Emily</FirstName>
+        <LastName>White</LastName>
+        <Role>Manager</Role>
+        <Email>emily.white@example.com</Email>
+        <PhoneNumber>3216549870</PhoneNumber>
+        <Salary>55000</Salary>
+        <HireDate>2022-01-15</HireDate>
+        <AddressID>6</AddressID>
+      </record>
+      <record>
+        <StaffID>2</StaffID>
+        <FirstName>Michael</FirstName>
+        <LastName>Green</LastName>
+        <Role>Chef</Role>
+        <Email>michael.green@example.com</Email>
+        <PhoneNumber>1597534862</PhoneNumber>
+        <Salary>45000</Salary>
+        <HireDate>2022-03-01</HireDate>
+        <AddressID>7</AddressID>
+      </record>
+      <record>
+        <StaffID>3</StaffID>
+        <FirstName>Thomas</FirstName>
+        <LastName>Black</LastName>
+        <Role>Waiter</Role>
+        <Email>sarah.black@example.com</Email>
+        <PhoneNumber>7531598462</PhoneNumber>
+        <Salary>30000</Salary>
+        <HireDate>2023-05-20</HireDate>
+        <AddressID>8</AddressID>
+      </record>
+      <record>
+        <StaffID>4</StaffID>
+        <FirstName>David</FirstName>
+        <LastName>Wilson</LastName>
+        <Role>Bartender</Role>
+        <Email>david.wilson@example.com</Email>
+        <PhoneNumber>9513574862</PhoneNumber>
+        <Salary>25000</Salary>
+        <HireDate>2021-11-10</HireDate>
+        <AddressID>9</AddressID>
+      </record>
+      <record>
+        <StaffID>5</StaffID>
+        <FirstName>Laura</FirstName>
+        <LastName>Taylor</LastName>
+        <Role>Host</Role>
+        <Email>laura.taylor@example.com</Email>
+        <PhoneNumber>1594867532</PhoneNumber>
+        <Salary>20000</Salary>
+        <HireDate>2023-07-05</HireDate>
+        <AddressID>10</AddressID>
+      </record>
+    </data>
+  </table>
+  <table name="Suppliers">
+    <schema>
+      <column name="SupplierID" type="INTEGER" primary_key="1" />
+      <column name="Name" type="VARCHAR(100)" primary_key="0" />
+      <column name="ContactName" type="VARCHAR(50)" primary_key="0" />
+      <column name="ContactEmail" type="VARCHAR(100)" primary_key="0" />
+      <column name="PhoneNumber" type="VARCHAR(20)" primary_key="0" />
+      <column name="AddressID" type="INTEGER" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <SupplierID>1</SupplierID>
+        <Name>Fresh Produce Co.</Name>
+        <ContactName>Tom Rogers</ContactName>
+        <ContactEmail>tom.rogers@example.com</ContactEmail>
+        <PhoneNumber>1231231234</PhoneNumber>
+        <AddressID>1</AddressID>
+      </record>
+      <record>
+        <SupplierID>2</SupplierID>
+        <Name>Beverage Distributors</Name>
+        <ContactName>Nancy Miles</ContactName>
+        <ContactEmail>nancy.miles@example.com</ContactEmail>
+        <PhoneNumber>2342342345</PhoneNumber>
+        <AddressID>2</AddressID>
+      </record>
+      <record>
+        <SupplierID>3</SupplierID>
+        <Name>Meat Suppliers Inc.</Name>
+        <ContactName>Gary Cook</ContactName>
+        <ContactEmail>gary.cook@example.com</ContactEmail>
+        <PhoneNumber>3453453456</PhoneNumber>
+        <AddressID>3</AddressID>
+      </record>
+      <record>
+        <SupplierID>4</SupplierID>
+        <Name>Seafood Delights</Name>
+        <ContactName>Diane Fisher</ContactName>
+        <ContactEmail>diane.fisher@example.com</ContactEmail>
+        <PhoneNumber>4564564567</PhoneNumber>
+        <AddressID>4</AddressID>
+      </record>
+      <record>
+        <SupplierID>5</SupplierID>
+        <Name>Bakery Goods Co.</Name>
+        <ContactName>Paul Baker</ContactName>
+        <ContactEmail>paul.baker@example.com</ContactEmail>
+        <PhoneNumber>5675675678</PhoneNumber>
+        <AddressID>5</AddressID>
+      </record>
+    </data>
+  </table>
+  <table name="Ingredients">
+    <schema>
+      <column name="IngredientID" type="INTEGER" primary_key="1" />
+      <column name="Name" type="VARCHAR(100)" primary_key="0" />
+      <column name="Unit" type="VARCHAR(50)" primary_key="0" />
+      <column name="SupplierID" type="INTEGER" primary_key="0" />
+      <column name="StockQuantity" type="INT" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <IngredientID>1</IngredientID>
+        <Name>Tomatoes</Name>
+        <Unit>kg</Unit>
+        <SupplierID>1</SupplierID>
+        <StockQuantity>100</StockQuantity>
+      </record>
+      <record>
+        <IngredientID>2</IngredientID>
+        <Name>Beef</Name>
+        <Unit>kg</Unit>
+        <SupplierID>3</SupplierID>
+        <StockQuantity>50</StockQuantity>
+      </record>
+      <record>
+        <IngredientID>3</IngredientID>
+        <Name>Salomon</Name>
+        <Unit>kg</Unit>
+        <SupplierID>4</SupplierID>
+        <StockQuantity>30</StockQuantity>
+      </record>
+      <record>
+        <IngredientID>4</IngredientID>
+        <Name>Flour</Name>
+        <Unit>kg</Unit>
+        <SupplierID>5</SupplierID>
+        <StockQuantity>200</StockQuantity>
+      </record>
+      <record>
+        <IngredientID>5</IngredientID>
+        <Name>Cheese</Name>
+        <Unit>kg</Unit>
+        <SupplierID>2</SupplierID>
+        <StockQuantity>75</StockQuantity>
+      </record>
+    </data>
+  </table>
+  <table name="Menus">
+    <schema>
+      <column name="MenuID" type="INTEGER" primary_key="1" />
+      <column name="Name" type="VARCHAR(100)" primary_key="0" />
+      <column name="Description" type="VARCHAR(500)" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <MenuID>1</MenuID>
+        <Name>Breakfast Menu</Name>
+        <Description>Delicious breakfast options to start your day</Description>
+      </record>
+      <record>
+        <MenuID>2</MenuID>
+        <Name>Lunch Menu</Name>
+        <Description>Tasty and satisfying lunch selections</Description>
+      </record>
+      <record>
+        <MenuID>3</MenuID>
+        <Name>Dinner Menu</Name>
+        <Description>Hearty and gourmet dinner dishes</Description>
+      </record>
+      <record>
+        <MenuID>4</MenuID>
+        <Name>Kids Menu</Name>
+        <Description>Fun and delicious meals for kids</Description>
+      </record>
+      <record>
+        <MenuID>5</MenuID>
+        <Name>Dessert Menu</Name>
+        <Description>Sweet treats to end your meal</Description>
+      </record>
+    </data>
+  </table>
+  <table name="MenuItems">
+    <schema>
+      <column name="MenuItemID" type="INTEGER" primary_key="1" />
+      <column name="MenuID" type="INTEGER" primary_key="0" />
+      <column name="Name" type="VARCHAR(100)" primary_key="0" />
+      <column name="Description" type="VARCHAR(500)" primary_key="0" />
+      <column name="Price" type="DECIMAL(10, 2)" primary_key="0" />
+      <column name="Availability" type="VARCHAR(20)" primary_key="0" />
+      <column name="Image" type="BLOB" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <MenuItemID>1</MenuItemID>
+        <MenuID>1</MenuID>
+        <Name>Margherita Pizza</Name>
+        <Description>Classic pizza with fresh mozzarella and basil</Description>
+        <Price>5.99</Price>
+        <Availability>Unavailable</Availability>
+        <Image>x</Image>
+      </record>
+      <record>
+        <MenuItemID>2</MenuItemID>
+        <MenuID>2</MenuID>
+        <Name>Lasagna Bolognese</Name>
+        <Description>Traditional layered pasta with meat sauce</Description>
+        <Price>9.99</Price>
+        <Availability>Available</Availability>
+        <Image>x</Image>
+      </record>
+      <record>
+        <MenuItemID>3</MenuItemID>
+        <MenuID>3</MenuID>
+        <Name>Grilled Branzino</Name>
+        <Description>Fresh Mediterranean sea bass with herbs</Description>
+        <Price>14.99</Price>
+        <Availability>Available</Availability>
+        <Image>x</Image>
+      </record>
+      <record>
+        <MenuItemID>4</MenuItemID>
+        <MenuID>4</MenuID>
+        <Name>Arancini</Name>
+        <Description>Crispy risotto balls stuffed with cheese</Description>
+        <Price>6.49</Price>
+        <Availability>Available</Availability>
+        <Image>x</Image>
+      </record>
+      <record>
+        <MenuItemID>5</MenuItemID>
+        <MenuID>5</MenuID>
+        <Name>Tiramisu</Name>
+        <Description>Classic Italian dessert with coffee and mascarpone</Description>
+        <Price>4.99</Price>
+        <Availability>Available</Availability>
+        <Image>x</Image>
+      </record>
+    </data>
+  </table>
+  <table name="MenuIngredients">
+    <schema>
+      <column name="MenuItemID" type="INTEGER" primary_key="1" />
+      <column name="IngredientID" type="INTEGER" primary_key="2" />
+      <column name="Quantity" type="DECIMAL(10, 2)" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <MenuItemID>1</MenuItemID>
+        <IngredientID>4</IngredientID>
+        <Quantity>0.2</Quantity>
+      </record>
+      <record>
+        <MenuItemID>2</MenuItemID>
+        <IngredientID>2</IngredientID>
+        <Quantity>0.25</Quantity>
+      </record>
+      <record>
+        <MenuItemID>3</MenuItemID>
+        <IngredientID>3</IngredientID>
+        <Quantity>0.3</Quantity>
+      </record>
+      <record>
+        <MenuItemID>4</MenuItemID>
+        <IngredientID>5</IngredientID>
+        <Quantity>0.15</Quantity>
+      </record>
+      <record>
+        <MenuItemID>5</MenuItemID>
+        <IngredientID>4</IngredientID>
+        <Quantity>0.1</Quantity>
+      </record>
+    </data>
+  </table>
+  <table name="Reservations">
+    <schema>
+      <column name="ReservationID" type="INTEGER" primary_key="1" />
+      <column name="CustomerID" type="INTEGER" primary_key="0" />
+      <column name="ReservationDateTime" type="DATETIME" primary_key="0" />
+      <column name="NumberOfGuests" type="INTEGER" primary_key="0" />
+      <column name="SpecialRequests" type="VARCHAR(500)" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <ReservationID>1</ReservationID>
+        <CustomerID>1</CustomerID>
+        <ReservationDateTime>2025-01-13 08:00:00</ReservationDateTime>
+        <NumberOfGuests>2</NumberOfGuests>
+        <SpecialRequests>Window seat</SpecialRequests>
+      </record>
+      <record>
+        <ReservationID>2</ReservationID>
+        <CustomerID>2</CustomerID>
+        <ReservationDateTime>2025-01-13 12:30:00</ReservationDateTime>
+        <NumberOfGuests>4</NumberOfGuests>
+        <SpecialRequests>Birthday party</SpecialRequests>
+      </record>
+      <record>
+        <ReservationID>3</ReservationID>
+        <CustomerID>3</CustomerID>
+        <ReservationDateTime>2025-01-13 19:00:00</ReservationDateTime>
+        <NumberOfGuests>3</NumberOfGuests>
+        <SpecialRequests>Vegetarian menu</SpecialRequests>
+      </record>
+      <record>
+        <ReservationID>4</ReservationID>
+        <CustomerID>4</CustomerID>
+        <ReservationDateTime>2025-01-14 07:30:00</ReservationDateTime>
+        <NumberOfGuests>1</NumberOfGuests>
+        <SpecialRequests>Quiet corner</SpecialRequests>
+      </record>
+      <record>
+        <ReservationID>5</ReservationID>
+        <CustomerID>5</CustomerID>
+        <ReservationDateTime>2025-01-14 18:00:00</ReservationDateTime>
+        <NumberOfGuests>5</NumberOfGuests>
+        <SpecialRequests>Anniversary celebration</SpecialRequests>
+      </record>
+    </data>
+  </table>
+  <table name="Orders">
+    <schema>
+      <column name="OrderID" type="INTEGER" primary_key="1" />
+      <column name="CustomerID" type="INTEGER" primary_key="0" />
+      <column name="StaffID" type="INTEGER" primary_key="0" />
+      <column name="MenuID" type="INTEGER" primary_key="0" />
+      <column name="OrderDateTime" type="TIMESTAMP" primary_key="0" />
+      <column name="TotalAmount" type="DECIMAL(10, 2)" primary_key="0" />
+      <column name="PaymentMethod" type="VARCHAR(50)" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <OrderID>1</OrderID>
+        <CustomerID>1</CustomerID>
+        <StaffID>1</StaffID>
+        <MenuID>2</MenuID>
+        <OrderDateTime>2025-01-27 09:44:03</OrderDateTime>
+        <TotalAmount>19.98</TotalAmount>
+        <PaymentMethod>Cash</PaymentMethod>
+      </record>
+      <record>
+        <OrderID>2</OrderID>
+        <CustomerID>3</CustomerID>
+        <StaffID>3</StaffID>
+        <MenuID>3</MenuID>
+        <OrderDateTime>2025-01-27 09:44:03</OrderDateTime>
+        <TotalAmount>29.98</TotalAmount>
+        <PaymentMethod>Card</PaymentMethod>
+      </record>
+      <record>
+        <OrderID>3</OrderID>
+        <CustomerID>4</CustomerID>
+        <StaffID>4</StaffID>
+        <MenuID>4</MenuID>
+        <OrderDateTime>2025-01-27 09:44:03</OrderDateTime>
+        <TotalAmount>12.98</TotalAmount>
+        <PaymentMethod>Card</PaymentMethod>
+      </record>
+      <record>
+        <OrderID>4</OrderID>
+        <CustomerID>5</CustomerID>
+        <StaffID>5</StaffID>
+        <MenuID>5</MenuID>
+        <OrderDateTime>2025-01-27 09:44:03</OrderDateTime>
+        <TotalAmount>9.98</TotalAmount>
+        <PaymentMethod>Cash</PaymentMethod>
+      </record>
+      <record>
+        <OrderID>5</OrderID>
+        <CustomerID>1</CustomerID>
+        <StaffID>2</StaffID>
+        <MenuID>3</MenuID>
+        <OrderDateTime>2025-01-27 09:44:03</OrderDateTime>
+        <TotalAmount>44.97</TotalAmount>
+        <PaymentMethod>Cash</PaymentMethod>
+      </record>
+    </data>
+  </table>
+  <table name="OrderDetails">
+    <schema>
+      <column name="OrderDetailID" type="INTEGER" primary_key="1" />
+      <column name="OrderID" type="INTEGER" primary_key="0" />
+      <column name="MenuItemID" type="INTEGER" primary_key="0" />
+      <column name="Quantity" type="INTEGER" primary_key="0" />
+      <column name="Price" type="DECIMAL(10, 2)" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <OrderDetailID>1</OrderDetailID>
+        <OrderID>1</OrderID>
+        <MenuItemID>2</MenuItemID>
+        <Quantity>2</Quantity>
+        <Price>9.99</Price>
+      </record>
+      <record>
+        <OrderDetailID>2</OrderDetailID>
+        <OrderID>2</OrderID>
+        <MenuItemID>3</MenuItemID>
+        <Quantity>2</Quantity>
+        <Price>14.99</Price>
+      </record>
+      <record>
+        <OrderDetailID>3</OrderDetailID>
+        <OrderID>3</OrderID>
+        <MenuItemID>4</MenuItemID>
+        <Quantity>2</Quantity>
+        <Price>6.49</Price>
+      </record>
+      <record>
+        <OrderDetailID>4</OrderDetailID>
+        <OrderID>4</OrderID>
+        <MenuItemID>5</MenuItemID>
+        <Quantity>2</Quantity>
+        <Price>4.99</Price>
+      </record>
+      <record>
+        <OrderDetailID>5</OrderDetailID>
+        <OrderID>5</OrderID>
+        <MenuItemID>3</MenuItemID>
+        <Quantity>3</Quantity>
+        <Price>14.99</Price>
+      </record>
+    </data>
+  </table>
+  <table name="Payments">
+    <schema>
+      <column name="PaymentID" type="INTEGER" primary_key="1" />
+      <column name="OrderID" type="INTEGER" primary_key="0" />
+      <column name="PaymentDate" type="TIMESTAMP" primary_key="0" />
+      <column name="Amount" type="DECIMAL(10, 2)" primary_key="0" />
+      <column name="PaymentMethod" type="VARCHAR(50)" primary_key="0" />
+      <column name="PaymentStatus" type="TEXT" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <PaymentID>1</PaymentID>
+        <OrderID>1</OrderID>
+        <PaymentDate>2025-01-27 09:44:03</PaymentDate>
+        <Amount>19.98</Amount>
+        <PaymentMethod>Cash</PaymentMethod>
+        <PaymentStatus>Pending</PaymentStatus>
+      </record>
+      <record>
+        <PaymentID>2</PaymentID>
+        <OrderID>2</OrderID>
+        <PaymentDate>2025-01-27 09:44:03</PaymentDate>
+        <Amount>29.98</Amount>
+        <PaymentMethod>Card</PaymentMethod>
+        <PaymentStatus>Pending</PaymentStatus>
+      </record>
+      <record>
+        <PaymentID>3</PaymentID>
+        <OrderID>3</OrderID>
+        <PaymentDate>2025-01-27 09:44:03</PaymentDate>
+        <Amount>12.98</Amount>
+        <PaymentMethod>Card</PaymentMethod>
+        <PaymentStatus>Pending</PaymentStatus>
+      </record>
+      <record>
+        <PaymentID>4</PaymentID>
+        <OrderID>4</OrderID>
+        <PaymentDate>2025-01-27 09:44:03</PaymentDate>
+        <Amount>9.98</Amount>
+        <PaymentMethod>Cash</PaymentMethod>
+        <PaymentStatus>Pending</PaymentStatus>
+      </record>
+      <record>
+        <PaymentID>5</PaymentID>
+        <OrderID>5</OrderID>
+        <PaymentDate>2025-01-27 09:44:03</PaymentDate>
+        <Amount>44.97</Amount>
+        <PaymentMethod>Cash</PaymentMethod>
+        <PaymentStatus>Pending</PaymentStatus>
+      </record>
+    </data>
+  </table>
+  <table name="FinancialRecords">
+    <schema>
+      <column name="RecordID" type="INTEGER" primary_key="1" />
+      <column name="RecordDate" type="TIMESTAMP" primary_key="0" />
+      <column name="RecordType" type="VARCHAR(50)" primary_key="0" />
+      <column name="Description" type="TEXT" primary_key="0" />
+      <column name="Amount" type="DECIMAL(10, 2)" primary_key="0" />
+      <column name="RelatedID" type="INTEGER" primary_key="0" />
+      <column name="RelatedType" type="VARCHAR(50)" primary_key="0" />
+    </schema>
+    <data>
+      <record>
+        <RecordID>1</RecordID>
+        <RecordDate>2025-01-27 09:44:03</RecordDate>
+        <RecordType>Revenue</RecordType>
+        <Description>Payment received for Order 1</Description>
+        <Amount>19.98</Amount>
+        <RelatedID>1</RelatedID>
+        <RelatedType>Order</RelatedType>
+      </record>
+      <record>
+        <RecordID>2</RecordID>
+        <RecordDate>2025-01-27 09:44:03</RecordDate>
+        <RecordType>Revenue</RecordType>
+        <Description>Payment received for Order 2</Description>
+        <Amount>29.98</Amount>
+        <RelatedID>2</RelatedID>
+        <RelatedType>Order</RelatedType>
+      </record>
+      <record>
+        <RecordID>3</RecordID>
+        <RecordDate>2025-01-27 09:44:03</RecordDate>
+        <RecordType>Revenue</RecordType>
+        <Description>Payment received for Order 3</Description>
+        <Amount>12.98</Amount>
+        <RelatedID>3</RelatedID>
+        <RelatedType>Order</RelatedType>
+      </record>
+      <record>
+        <RecordID>4</RecordID>
+        <RecordDate>2025-01-27 09:44:03</RecordDate>
+        <RecordType>Revenue</RecordType>
+        <Description>Payment received for Order 4</Description>
+        <Amount>9.98</Amount>
+        <RelatedID>4</RelatedID>
+        <RelatedType>Order</RelatedType>
+      </record>
+      <record>
+        <RecordID>5</RecordID>
+        <RecordDate>2025-01-27 09:44:03</RecordDate>
+        <RecordType>Revenue</RecordType>
+        <Description>Payment received for Order 5</Description>
+        <Amount>44.97</Amount>
+        <RelatedID>5</RelatedID>
+        <RelatedType>Order</RelatedType>
+      </record>
+    </data>
+  </table>
+  <view name="OrdersSummary">
+    <schema>CREATE VIEW OrdersSummary AS
+SELECT 
+    Orders.OrderID, 
+    Customers.FirstName || ' ' || Customers.LastName AS CustomerName, 
+    Staff.FirstName || ' ' || Staff.LastName AS StaffName, 
+    Orders.OrderDateTime, 
+    Orders.TotalAmount, 
+    Orders.PaymentMethod
+FROM 
+    Orders
+LEFT JOIN 
+    Customers ON Orders.CustomerID = Customers.CustomerID
+LEFT JOIN 
+    Staff ON Orders.StaffID = Staff.StaffID</schema>
+  </view>
+  <view name="IngredientStockLevels">
+    <schema>CREATE VIEW IngredientStockLevels AS
+SELECT 
+    Ingredients.IngredientID, 
+    Ingredients.Name AS IngredientName, 
+    Ingredients.Unit, 
+    Ingredients.StockQuantity, 
+    Suppliers.Name AS SupplierName
+FROM 
+    Ingredients
+LEFT JOIN 
+    Suppliers ON Ingredients.SupplierID = Suppliers.SupplierID</schema>
+  </view>
+  <view name="MenuItemsWithIngredients">
+    <schema>CREATE VIEW MenuItemsWithIngredients AS
+SELECT 
+    MenuItems.MenuItemID, 
+    MenuItems.Name AS MenuItemName, 
+    MenuItems.Description AS MenuItemDescription, 
+    MenuItems.Price, 
+    Menus.Name AS MenuName, 
+    Ingredients.Name AS IngredientName, 
+    MenuIngredients.Quantity
+FROM 
+    MenuItems
+JOIN 
+    Menus ON MenuItems.MenuID = Menus.MenuID
+JOIN 
+    MenuIngredients ON MenuItems.MenuItemID = MenuIngredients.MenuItemID
+JOIN 
+    Ingredients ON MenuIngredients.IngredientID = Ingredients.IngredientID</schema>
+  </view>
+  <view name="FinancialSummary">
+    <schema>CREATE VIEW FinancialSummary AS
+SELECT 
+    RecordType, 
+    SUM(Amount) AS TotalAmount, 
+    COUNT(*) AS TransactionCount
+FROM 
+    FinancialRecords
+GROUP BY 
+    RecordType</schema>
+  </view>
+  <view name="FinancialDetails">
+    <schema>CREATE VIEW FinancialDetails AS
+SELECT 
+    RecordID, 
+    RecordDate, 
+    RecordType, 
+    Description, 
+    Amount, 
+    RelatedID, 
+    RelatedType
+FROM 
+    FinancialRecords
+ORDER BY 
+    RecordDate DESC</schema>
+  </view>
+  <trigger name="after_insert_orders">
+    <schema>CREATE TRIGGER after_insert_orders
+AFTER INSERT ON Orders
+FOR EACH ROW
+BEGIN
+    INSERT INTO OrderDetails (OrderID, MenuItemID, Quantity, Price)
+    VALUES (
+        NEW.OrderID,
+        NEW.MenuID,
+        CAST(NEW.TotalAmount / (SELECT Price FROM MenuItems WHERE MenuItemID = NEW.MenuID) AS INTEGER),
+        (SELECT Price FROM MenuItems WHERE MenuItemID = NEW.MenuID)
+    );
+    
+    INSERT INTO Payments (OrderID, Amount, PaymentMethod)
+    VALUES (NEW.OrderID, NEW.TotalAmount, NEW.PaymentMethod);
+END</schema>
+  </trigger>
+  <trigger name="update_stock_quantity_after_order">
+    <schema>CREATE TRIGGER update_stock_quantity_after_order
+AFTER INSERT ON OrderDetails
+FOR EACH ROW
+BEGIN
+    UPDATE Ingredients
+    SET StockQuantity = StockQuantity - (
+        SELECT Quantity * NEW.Quantity
+        FROM MenuIngredients
+        WHERE MenuIngredients.IngredientID = Ingredients.IngredientID
+          AND MenuIngredients.MenuItemID = NEW.MenuItemID
+    )
+    WHERE EXISTS (
+        SELECT 1
+        FROM MenuIngredients
+        WHERE MenuIngredients.IngredientID = Ingredients.IngredientID
+          AND MenuIngredients.MenuItemID = NEW.MenuItemID
+    );
+END</schema>
+  </trigger>
+  <trigger name="after_insert_payments">
+    <schema>CREATE TRIGGER after_insert_payments
+AFTER INSERT ON Payments
+FOR EACH ROW
+BEGIN
+    INSERT INTO FinancialRecords (RecordType, Description, Amount, RelatedID, RelatedType)
+    VALUES (
+        'Revenue', 
+        'Payment received for Order ' || NEW.OrderID, 
+        NEW.Amount, 
+        NEW.OrderID, 
+        'Order'
+    );
+END</schema>
+  </trigger>
+  <relation table="Customers">
+    <foreign_key column="AddressID" references_table="Addresses" references_column="AddressID" />
+  </relation>
+  <relation table="Staff">
+    <foreign_key column="AddressID" references_table="Addresses" references_column="AddressID" />
+  </relation>
+  <relation table="Suppliers">
+    <foreign_key column="AddressID" references_table="Addresses" references_column="AddressID" />
+  </relation>
+  <relation table="Ingredients">
+    <foreign_key column="SupplierID" references_table="Suppliers" references_column="SupplierID" />
+  </relation>
+  <relation table="MenuItems">
+    <foreign_key column="MenuID" references_table="Menus" references_column="MenuID" />
+  </relation>
+  <relation table="MenuIngredients">
+    <foreign_key column="IngredientID" references_table="Ingredients" references_column="IngredientID" />
+    <foreign_key column="MenuItemID" references_table="MenuItems" references_column="MenuItemID" />
+  </relation>
+  <relation table="Reservations">
+    <foreign_key column="CustomerID" references_table="Customers" references_column="CustomerID" />
+  </relation>
+  <relation table="Orders">
+    <foreign_key column="StaffID" references_table="Staff" references_column="StaffID" />
+    <foreign_key column="CustomerID" references_table="Customers" references_column="CustomerID" />
+  </relation>
+  <relation table="OrderDetails">
+    <foreign_key column="MenuItemID" references_table="MenuItems" references_column="MenuItemID" />
+    <foreign_key column="OrderID" references_table="Orders" references_column="OrderID" />
+  </relation>
+  <relation table="Payments">
+    <foreign_key column="OrderID" references_table="Orders" references_column="OrderID" />
+  </relation>
+</dataset>

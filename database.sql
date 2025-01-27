@@ -1,3 +1,4 @@
+BEGIN TRANSACTION;
 CREATE TABLE Addresses (
     AddressID INTEGER PRIMARY KEY,
     Street VARCHAR(200) NOT NULL,
@@ -6,7 +7,21 @@ CREATE TABLE Addresses (
     ZipCode VARCHAR(20),
     Country VARCHAR(100) NOT NULL
 );
-
+INSERT INTO "Addresses" VALUES(1,'123 Elm Street','Springfield','IL','62701','USA');
+INSERT INTO "Addresses" VALUES(2,'456 Oak Avenue','Hometown','CA','90210','USA');
+INSERT INTO "Addresses" VALUES(3,'789 Pine Road','Cityville','NY','10001','USA');
+INSERT INTO "Addresses" VALUES(4,'101 Maple Lane','Seaside','FL','33101','USA');
+INSERT INTO "Addresses" VALUES(5,'202 Birch Blvd','Crustown','TX','73301','USA');
+INSERT INTO "Addresses" VALUES(6,'303 Cedar St','Greenville','SC','29601','USA');
+INSERT INTO "Addresses" VALUES(7,'404 Willow Way','Fairview','OR','97024','USA');
+INSERT INTO "Addresses" VALUES(8,'505 Aspen Ave','Lakeside','MI','49116','USA');
+INSERT INTO "Addresses" VALUES(9,'606 Redwood Rd','Hilltop','CO','80021','USA');
+INSERT INTO "Addresses" VALUES(10,'707 Fir Ln','Meadowbrook','PA','19046','USA');
+INSERT INTO "Addresses" VALUES(11,'808 Spruce Dr','Brookfield','CT','06804','USA');
+INSERT INTO "Addresses" VALUES(12,'909 Cypress Ct','Stonebridge','GA','30024','USA');
+INSERT INTO "Addresses" VALUES(13,'1010 Palm St','Palmview','FL','33176','USA');
+INSERT INTO "Addresses" VALUES(14,'1111 Pinewood Pl','Woodland','WA','98674','USA');
+INSERT INTO "Addresses" VALUES(15,'1212 Cherry Cir','Cherryville','NJ','07002','USA');
 CREATE TABLE Customers (
     CustomerID INTEGER PRIMARY KEY,
     FirstName VARCHAR(50) NOT NULL,
@@ -16,7 +31,133 @@ CREATE TABLE Customers (
     AddressID INTEGER,
     FOREIGN KEY (AddressID) REFERENCES Addresses(AddressID) ON DELETE SET NULL
 );
-
+INSERT INTO "Customers" VALUES(1,'John','Cat','john@example.com','1234567890',1);
+INSERT INTO "Customers" VALUES(2,'Jane','Smith','jane@example.com','9876543210',2);
+INSERT INTO "Customers" VALUES(3,'Alice','Johnson','alice@example.com','4567891230',3);
+INSERT INTO "Customers" VALUES(4,'Bob','White','bob@example.com','6543217890',4);
+INSERT INTO "Customers" VALUES(5,'Carol','Davis','carol@example.com','7891234560',5);
+CREATE TABLE FinancialRecords (
+    RecordID INTEGER PRIMARY KEY,
+    RecordDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    RecordType VARCHAR(50) NOT NULL CHECK (RecordType IN ('Revenue', 'Expense')),
+    Description TEXT NOT NULL,
+    Amount DECIMAL(10, 2) NOT NULL,
+    RelatedID INTEGER, 
+    RelatedType VARCHAR(50) 
+);
+INSERT INTO "FinancialRecords" VALUES(1,'2025-01-27 09:44:03','Revenue','Payment received for Order 1',19.98,1,'Order');
+INSERT INTO "FinancialRecords" VALUES(2,'2025-01-27 09:44:03','Revenue','Payment received for Order 2',29.98,2,'Order');
+INSERT INTO "FinancialRecords" VALUES(3,'2025-01-27 09:44:03','Revenue','Payment received for Order 3',12.98,3,'Order');
+INSERT INTO "FinancialRecords" VALUES(4,'2025-01-27 09:44:03','Revenue','Payment received for Order 4',9.98,4,'Order');
+INSERT INTO "FinancialRecords" VALUES(5,'2025-01-27 09:44:03','Revenue','Payment received for Order 5',44.97,5,'Order');
+CREATE TABLE Ingredients (
+    IngredientID INTEGER PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Unit VARCHAR(50) NOT NULL,
+    SupplierID INTEGER,
+    StockQuantity INT DEFAULT 0,
+    FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID) ON DELETE SET NULL
+);
+INSERT INTO "Ingredients" VALUES(1,'Tomatoes','kg',1,100);
+INSERT INTO "Ingredients" VALUES(2,'Beef','kg',3,50);
+INSERT INTO "Ingredients" VALUES(3,'Salomon','kg',4,30);
+INSERT INTO "Ingredients" VALUES(4,'Flour','kg',5,200);
+INSERT INTO "Ingredients" VALUES(5,'Cheese','kg',2,75);
+CREATE TABLE MenuIngredients (
+    MenuItemID INTEGER,
+    IngredientID INTEGER NOT NULL,
+    Quantity DECIMAL(10, 2) NOT NULL,
+    PRIMARY KEY (MenuItemID, IngredientID),
+    FOREIGN KEY (MenuItemID) REFERENCES MenuItems(MenuItemID) ON DELETE CASCADE,
+    FOREIGN KEY (IngredientID) REFERENCES Ingredients(IngredientID) ON DELETE CASCADE
+);
+INSERT INTO "MenuIngredients" VALUES(1,4,0.2);
+INSERT INTO "MenuIngredients" VALUES(2,2,0.25);
+INSERT INTO "MenuIngredients" VALUES(3,3,0.3);
+INSERT INTO "MenuIngredients" VALUES(4,5,0.15);
+INSERT INTO "MenuIngredients" VALUES(5,4,0.1);
+CREATE TABLE MenuItems (
+    MenuItemID INTEGER PRIMARY KEY,
+    MenuID INTEGER NOT NULL,
+    Name VARCHAR(100) NOT NULL,
+    Description VARCHAR(500),
+    Price DECIMAL(10, 2) NOT NULL,
+    Availability VARCHAR(20) NOT NULL,
+    Image BLOB NOT NULL,
+    FOREIGN KEY (MenuID) REFERENCES Menus(MenuID) ON DELETE CASCADE
+);
+INSERT INTO "MenuItems" VALUES(1,1,'Margherita Pizza','Classic pizza with fresh mozzarella and basil',5.99,'Unavailable','x');
+INSERT INTO "MenuItems" VALUES(2,2,'Lasagna Bolognese','Traditional layered pasta with meat sauce',9.99,'Available','x');
+INSERT INTO "MenuItems" VALUES(3,3,'Grilled Branzino','Fresh Mediterranean sea bass with herbs',14.99,'Available','x');
+INSERT INTO "MenuItems" VALUES(4,4,'Arancini','Crispy risotto balls stuffed with cheese',6.49,'Available','x');
+INSERT INTO "MenuItems" VALUES(5,5,'Tiramisu','Classic Italian dessert with coffee and mascarpone',4.99,'Available','x');
+CREATE TABLE Menus (
+    MenuID INTEGER PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Description VARCHAR(500)
+);
+INSERT INTO "Menus" VALUES(1,'Breakfast Menu','Delicious breakfast options to start your day');
+INSERT INTO "Menus" VALUES(2,'Lunch Menu','Tasty and satisfying lunch selections');
+INSERT INTO "Menus" VALUES(3,'Dinner Menu','Hearty and gourmet dinner dishes');
+INSERT INTO "Menus" VALUES(4,'Kids Menu','Fun and delicious meals for kids');
+INSERT INTO "Menus" VALUES(5,'Dessert Menu','Sweet treats to end your meal');
+CREATE TABLE OrderDetails (
+    OrderDetailID INTEGER PRIMARY KEY,
+    OrderID INTEGER NOT NULL,
+    MenuItemID INTEGER NOT NULL,
+    Quantity INTEGER NOT NULL,
+    Price DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE CASCADE,
+    FOREIGN KEY (MenuItemID) REFERENCES MenuItems(MenuItemID) ON DELETE CASCADE
+);
+INSERT INTO "OrderDetails" VALUES(1,1,2,2,9.99);
+INSERT INTO "OrderDetails" VALUES(2,2,3,2,14.99);
+INSERT INTO "OrderDetails" VALUES(3,3,4,2,6.49);
+INSERT INTO "OrderDetails" VALUES(4,4,5,2,4.99);
+INSERT INTO "OrderDetails" VALUES(5,5,3,3,14.99);
+CREATE TABLE Orders (
+    OrderID INTEGER PRIMARY KEY,
+    CustomerID INTEGER,
+    StaffID INTEGER,
+    MenuID INTEGER,
+    OrderDateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    TotalAmount DECIMAL(10, 2),
+    PaymentMethod VARCHAR(50) NOT NULL,
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE SET NULL,
+    FOREIGN KEY (StaffID) REFERENCES Staff(StaffID) ON DELETE SET NULL
+);
+INSERT INTO "Orders" VALUES(1,1,1,2,'2025-01-27 09:44:03',19.98,'Cash');
+INSERT INTO "Orders" VALUES(2,3,3,3,'2025-01-27 09:44:03',29.98,'Card');
+INSERT INTO "Orders" VALUES(3,4,4,4,'2025-01-27 09:44:03',12.98,'Card');
+INSERT INTO "Orders" VALUES(4,5,5,5,'2025-01-27 09:44:03',9.98,'Cash');
+INSERT INTO "Orders" VALUES(5,1,2,3,'2025-01-27 09:44:03',44.97,'Cash');
+CREATE TABLE Payments (
+    PaymentID INTEGER PRIMARY KEY,
+    OrderID INTEGER NOT NULL,
+    PaymentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Amount DECIMAL(10, 2) NOT NULL,
+    PaymentMethod VARCHAR(50) NOT NULL,
+    PaymentStatus TEXT DEFAULT 'Pending' CHECK (PaymentStatus IN ('Pending', 'Completed', 'Failed')),
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE CASCADE
+);
+INSERT INTO "Payments" VALUES(1,1,'2025-01-27 09:44:03',19.98,'Cash','Pending');
+INSERT INTO "Payments" VALUES(2,2,'2025-01-27 09:44:03',29.98,'Card','Pending');
+INSERT INTO "Payments" VALUES(3,3,'2025-01-27 09:44:03',12.98,'Card','Pending');
+INSERT INTO "Payments" VALUES(4,4,'2025-01-27 09:44:03',9.98,'Cash','Pending');
+INSERT INTO "Payments" VALUES(5,5,'2025-01-27 09:44:03',44.97,'Cash','Pending');
+CREATE TABLE Reservations (
+    ReservationID INTEGER PRIMARY KEY,
+    CustomerID INTEGER NOT NULL,
+    ReservationDateTime DATETIME NOT NULL,
+    NumberOfGuests INTEGER NOT NULL,
+    SpecialRequests VARCHAR(500),
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE CASCADE
+);
+INSERT INTO "Reservations" VALUES(1,1,'2025-01-13 08:00:00',2,'Window seat');
+INSERT INTO "Reservations" VALUES(2,2,'2025-01-13 12:30:00',4,'Birthday party');
+INSERT INTO "Reservations" VALUES(3,3,'2025-01-13 19:00:00',3,'Vegetarian menu');
+INSERT INTO "Reservations" VALUES(4,4,'2025-01-14 07:30:00',1,'Quiet corner');
+INSERT INTO "Reservations" VALUES(5,5,'2025-01-14 18:00:00',5,'Anniversary celebration');
 CREATE TABLE Staff (
     StaffID INTEGER PRIMARY KEY,
     FirstName VARCHAR(50) NOT NULL,
@@ -29,7 +170,11 @@ CREATE TABLE Staff (
     AddressID INTEGER,
     FOREIGN KEY (AddressID) REFERENCES Addresses(AddressID) ON DELETE SET NULL
 );
-
+INSERT INTO "Staff" VALUES(1,'Emily','White','Manager','emily.white@example.com','3216549870',55000,'2022-01-15',6);
+INSERT INTO "Staff" VALUES(2,'Michael','Green','Chef','michael.green@example.com','1597534862',45000,'2022-03-01',7);
+INSERT INTO "Staff" VALUES(3,'Thomas','Black','Waiter','sarah.black@example.com','7531598462',30000,'2023-05-20',8);
+INSERT INTO "Staff" VALUES(4,'David','Wilson','Bartender','david.wilson@example.com','9513574862',25000,'2021-11-10',9);
+INSERT INTO "Staff" VALUES(5,'Laura','Taylor','Host','laura.taylor@example.com','1594867532',20000,'2023-07-05',10);
 CREATE TABLE Suppliers (
     SupplierID INTEGER PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
@@ -39,196 +184,11 @@ CREATE TABLE Suppliers (
     AddressID INTEGER,
     FOREIGN KEY (AddressID) REFERENCES Addresses(AddressID) ON DELETE SET NULL
 );
-
-CREATE TABLE Ingredients (
-    IngredientID INTEGER PRIMARY KEY,
-    Name VARCHAR(100) NOT NULL,
-    Unit VARCHAR(50) NOT NULL,
-    SupplierID INTEGER,
-    StockQuantity INT DEFAULT 0,
-    FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID) ON DELETE SET NULL
-);
-
-CREATE TABLE Menus (
-    MenuID INTEGER PRIMARY KEY,
-    Name VARCHAR(100) NOT NULL,
-    Description VARCHAR(500)
-);
-
-CREATE TABLE MenuItems (
-    MenuItemID INTEGER PRIMARY KEY,
-    MenuID INTEGER NOT NULL,
-    Name VARCHAR(100) NOT NULL,
-    Description VARCHAR(500),
-    Price DECIMAL(10, 2) NOT NULL,
-    Availability VARCHAR(20) NOT NULL,
-    Image BLOB NOT NULL,
-    FOREIGN KEY (MenuID) REFERENCES Menus(MenuID) ON DELETE CASCADE
-);
-
-CREATE TABLE MenuIngredients (
-    MenuItemID INTEGER,
-    IngredientID INTEGER NOT NULL,
-    Quantity DECIMAL(10, 2) NOT NULL,
-    PRIMARY KEY (MenuItemID, IngredientID),
-    FOREIGN KEY (MenuItemID) REFERENCES MenuItems(MenuItemID) ON DELETE CASCADE,
-    FOREIGN KEY (IngredientID) REFERENCES Ingredients(IngredientID) ON DELETE CASCADE
-);
-
-CREATE TABLE Reservations (
-    ReservationID INTEGER PRIMARY KEY,
-    CustomerID INTEGER NOT NULL,
-    ReservationDateTime DATETIME NOT NULL,
-    NumberOfGuests INTEGER NOT NULL,
-    SpecialRequests VARCHAR(500),
-    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE CASCADE
-);
-
-CREATE TABLE Orders (
-    OrderID INTEGER PRIMARY KEY,
-    CustomerID INTEGER,
-    StaffID INTEGER,
-    MenuID INTEGER,
-    OrderDateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    TotalAmount DECIMAL(10, 2),
-    PaymentMethod VARCHAR(50) NOT NULL,
-    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE SET NULL,
-    FOREIGN KEY (StaffID) REFERENCES Staff(StaffID) ON DELETE SET NULL
-);
-
-CREATE TABLE OrderDetails (
-    OrderDetailID INTEGER PRIMARY KEY,
-    OrderID INTEGER NOT NULL,
-    MenuItemID INTEGER NOT NULL,
-    Quantity INTEGER NOT NULL,
-    Price DECIMAL(10, 2) NOT NULL,
-    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE CASCADE,
-    FOREIGN KEY (MenuItemID) REFERENCES MenuItems(MenuItemID) ON DELETE CASCADE
-);
-
-CREATE TABLE Payments (
-    PaymentID INTEGER PRIMARY KEY,
-    OrderID INTEGER NOT NULL,
-    PaymentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    Amount DECIMAL(10, 2) NOT NULL,
-    PaymentMethod VARCHAR(50) NOT NULL,
-    PaymentStatus TEXT DEFAULT 'Pending' CHECK (PaymentStatus IN ('Pending', 'Completed', 'Failed')),
-    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE CASCADE
-);
-
-CREATE TABLE FinancialRecords (
-    RecordID INTEGER PRIMARY KEY,
-    RecordDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    RecordType VARCHAR(50) NOT NULL CHECK (RecordType IN ('Revenue', 'Expense')),
-    Description TEXT NOT NULL,
-    Amount DECIMAL(10, 2) NOT NULL,
-    RelatedID INTEGER, 
-    RelatedType VARCHAR(50) 
-);
-
-INSERT INTO Addresses (Street, City, State, ZipCode, Country) VALUES
-('123 Elm Street', 'Springfield', 'IL', '62701', 'USA'),
-('456 Oak Avenue', 'Hometown', 'CA', '90210', 'USA'),
-('789 Pine Road', 'Cityville', 'NY', '10001', 'USA'),
-('101 Maple Lane', 'Seaside', 'FL', '33101', 'USA'),
-('202 Birch Blvd', 'Crustown', 'TX', '73301', 'USA'),
-('303 Cedar St', 'Greenville', 'SC', '29601', 'USA'),
-('404 Willow Way', 'Fairview', 'OR', '97024', 'USA'),
-('505 Aspen Ave', 'Lakeside', 'MI', '49116', 'USA'),
-('606 Redwood Rd', 'Hilltop', 'CO', '80021', 'USA'),
-('707 Fir Ln', 'Meadowbrook', 'PA', '19046', 'USA'),
-('808 Spruce Dr', 'Brookfield', 'CT', '06804', 'USA'),
-('909 Cypress Ct', 'Stonebridge', 'GA', '30024', 'USA'),
-('1010 Palm St', 'Palmview', 'FL', '33176', 'USA'),
-('1111 Pinewood Pl', 'Woodland', 'WA', '98674', 'USA'),
-('1212 Cherry Cir', 'Cherryville', 'NJ', '07002', 'USA');
-
-INSERT INTO Customers (FirstName, LastName, Email, PhoneNumber, AddressID) VALUES
-('John', 'Cat', 'john@example.com', '1234567890', 1),
-('Jane', 'Smith', 'jane@example.com', '9876543210', 2),
-('Alice', 'Johnson', 'alice@example.com', '4567891230', 3),
-('Bob', 'White', 'bob@example.com', '6543217890', 4),
-('Carol', 'Davis', 'carol@example.com', '7891234560', 5);
-
-INSERT INTO Staff (FirstName, LastName, Role, Email, PhoneNumber, Salary, HireDate, AddressID) VALUES
-('Emily', 'White', 'Manager', 'emily.white@example.com', '3216549870', 55000.00, '2022-01-15', 6),
-('Michael', 'Green', 'Chef', 'michael.green@example.com', '1597534862', 45000.00, '2022-03-01', 7),
-('Thomas', 'Black', 'Waiter', 'sarah.black@example.com', '7531598462', 30000.00, '2023-05-20', 8),
-('David', 'Wilson', 'Bartender', 'david.wilson@example.com', '9513574862', 25000.00, '2021-11-10', 9),
-('Laura', 'Taylor', 'Host', 'laura.taylor@example.com', '1594867532', 20000.00, '2023-07-05', 10);
-
-INSERT INTO Suppliers (Name, ContactName, ContactEmail, PhoneNumber, AddressID) VALUES
-('Fresh Produce Co.', 'Tom Rogers', 'tom.rogers@example.com', '1231231234', 1),
-('Beverage Distributors', 'Nancy Miles', 'nancy.miles@example.com', '2342342345', 2),
-('Meat Suppliers Inc.', 'Gary Cook', 'gary.cook@example.com', '3453453456', 3),
-('Seafood Delights', 'Diane Fisher', 'diane.fisher@example.com', '4564564567', 4),
-('Bakery Goods Co.', 'Paul Baker', 'paul.baker@example.com', '5675675678', 5);
-
-INSERT INTO Ingredients (Name, Unit, SupplierID, StockQuantity) VALUES
-('Tomatoes', 'kg', 1, 100),
-('Beef', 'kg', 3, 50),
-('Salomon', 'kg', 4, 30),
-('Flour', 'kg', 5, 200),
-('Cheese', 'kg', 2, 75);
-
-INSERT INTO Menus (Name, Description) VALUES
-('Breakfast Menu', 'Delicious breakfast options to start your day'),
-('Lunch Menu', 'Tasty and satisfying lunch selections'),
-('Dinner Menu', 'Hearty and gourmet dinner dishes'),
-('Kids Menu', 'Fun and delicious meals for kids'),
-('Dessert Menu', 'Sweet treats to end your meal');
-
-INSERT INTO MenuItems (MenuID, Name, Description, Price, Availability,Image) VALUES
-(1,'Margherita Pizza', 'Classic pizza with fresh mozzarella and basil', 5.99,'Unavailable','x'),
-(2,'Lasagna Bolognese', 'Traditional layered pasta with meat sauce', 9.99,'Available','x'),
-(3,'Grilled Branzino', 'Fresh Mediterranean sea bass with herbs', 14.99,'Available','x'),
-(4,'Arancini', 'Crispy risotto balls stuffed with cheese', 6.49,'Available','x'),
-(5,'Tiramisu', 'Classic Italian dessert with coffee and mascarpone', 4.99,'Available','x');
-
-INSERT INTO MenuIngredients (IngredientID, Quantity) VALUES
-(4, 0.2),
-(2, 0.25),
-(3, 0.3),
-(5, 0.15),
-(4, 0.1);
-
-INSERT INTO Reservations (CustomerID, ReservationDateTime, NumberOfGuests, SpecialRequests) VALUES
-(1, '2025-01-13 08:00:00', 2, 'Window seat'),
-(2, '2025-01-13 12:30:00', 4, 'Birthday party'),
-(3, '2025-01-13 19:00:00', 3, 'Vegetarian menu'),
-(4, '2025-01-14 07:30:00', 1, 'Quiet corner'),
-(5, '2025-01-14 18:00:00', 5, 'Anniversary celebration');
-
-INSERT INTO Orders (CustomerID, StaffID, MenuID, TotalAmount,PaymentMethod) VALUES 
-(1, 1, 2, 19.98, 'Cash'), 
-(3, 3, 3, 29.98, 'Card'), 
-(4, 4, 4, 12.98, 'Card'),
-(5, 5, 5,  9.98, 'Cash'), 
-(1, 2, 3, 44.97, 'Cash');
-
-INSERT INTO OrderDetails (OrderID, MenuItemID, Quantity, Price) VALUES 
-(1, 2, 2, 9.99),
-(2, 3, 2, 14.99),
-(3, 4, 2, 6.49),
-(4, 5, 2, 4.99),
-(5, 3, 3, 14.99);
-
-INSERT INTO Payments (OrderID, Amount, PaymentMethod) VALUES 
-(1, 19.98, 'Cash'),
-(2, 29.98, 'Card'),
-(3, 12.98, 'Card'),
-(4, 9.98, 'Cash'),
-(5, 44.97, 'Cash');
-
-INSERT INTO FinancialRecords (RecordType, Description, Amount, RelatedID, RelatedType) VALUES 
-('Revenue', 'Payment received for Order 1', 19.98, 1, 'Order'),
-('Revenue', 'Payment received for Order 2', 29.98, 2, 'Order'),
-('Revenue', 'Payment received for Order 3', 12.98, 3, 'Order'),
-('Revenue', 'Payment received for Order 4', 9.98, 4, 'Order'),
-('Revenue', 'Payment received for Order 5', 44.97, 5, 'Order');
-
--------------------------------------------------------------------------------------
-
+INSERT INTO "Suppliers" VALUES(1,'Fresh Produce Co.','Tom Rogers','tom.rogers@example.com','1231231234',1);
+INSERT INTO "Suppliers" VALUES(2,'Beverage Distributors','Nancy Miles','nancy.miles@example.com','2342342345',2);
+INSERT INTO "Suppliers" VALUES(3,'Meat Suppliers Inc.','Gary Cook','gary.cook@example.com','3453453456',3);
+INSERT INTO "Suppliers" VALUES(4,'Seafood Delights','Diane Fisher','diane.fisher@example.com','4564564567',4);
+INSERT INTO "Suppliers" VALUES(5,'Bakery Goods Co.','Paul Baker','paul.baker@example.com','5675675678',5);
 CREATE TRIGGER after_insert_orders
 AFTER INSERT ON Orders
 FOR EACH ROW
@@ -244,7 +204,6 @@ BEGIN
     INSERT INTO Payments (OrderID, Amount, PaymentMethod)
     VALUES (NEW.OrderID, NEW.TotalAmount, NEW.PaymentMethod);
 END;
-
 CREATE TRIGGER update_stock_quantity_after_order
 AFTER INSERT ON OrderDetails
 FOR EACH ROW
@@ -263,7 +222,6 @@ BEGIN
           AND MenuIngredients.MenuItemID = NEW.MenuItemID
     );
 END;
-
 CREATE TRIGGER after_insert_payments
 AFTER INSERT ON Payments
 FOR EACH ROW
@@ -277,7 +235,6 @@ BEGIN
         'Order'
     );
 END;
-
 CREATE VIEW OrdersSummary AS
 SELECT 
     Orders.OrderID, 
@@ -292,7 +249,6 @@ LEFT JOIN
     Customers ON Orders.CustomerID = Customers.CustomerID
 LEFT JOIN 
     Staff ON Orders.StaffID = Staff.StaffID;
-
 CREATE VIEW IngredientStockLevels AS
 SELECT 
     Ingredients.IngredientID, 
@@ -304,7 +260,6 @@ FROM
     Ingredients
 LEFT JOIN 
     Suppliers ON Ingredients.SupplierID = Suppliers.SupplierID;
-
 CREATE VIEW MenuItemsWithIngredients AS
 SELECT 
     MenuItems.MenuItemID, 
@@ -322,7 +277,6 @@ JOIN
     MenuIngredients ON MenuItems.MenuItemID = MenuIngredients.MenuItemID
 JOIN 
     Ingredients ON MenuIngredients.IngredientID = Ingredients.IngredientID;
-
 CREATE VIEW FinancialSummary AS
 SELECT 
     RecordType, 
@@ -332,7 +286,6 @@ FROM
     FinancialRecords
 GROUP BY 
     RecordType;
-
 CREATE VIEW FinancialDetails AS
 SELECT 
     RecordID, 
@@ -346,3 +299,4 @@ FROM
     FinancialRecords
 ORDER BY 
     RecordDate DESC;
+COMMIT;
