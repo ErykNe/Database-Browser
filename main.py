@@ -21,6 +21,8 @@ def export_db():
     export_window = Toplevel(m)
     export_window.title("Export database")
     export_window.geometry("650x270")
+    export_window.resizable(False, False)
+    
     
     label_frame = LabelFrame(export_window, text="File Details: ")
     label_frame.pack(fill='x', padx=10, pady=10)
@@ -267,6 +269,7 @@ def export_db():
 def create_column(table_name):
     create_column_window = Toplevel(m)
     create_column_window.title("Create Column")
+    create_column_window.resizable(False, False)
 
     label_frame = LabelFrame(create_column_window, text="Column Details: ")
     label_frame.pack(fill='x', padx=10, pady=10)
@@ -340,6 +343,7 @@ def create_table():
     create_window = Toplevel(m)
     create_window.title("Create Table")
     create_window.geometry("700x325")
+    create_window.resizable(False, False)
     
 
     label_frame = LabelFrame(create_window, text="Table Name: ")
@@ -884,6 +888,7 @@ def export_table_to_csv():
 
     export_window = Toplevel(m)
     export_window.title("Export Table to CSV")
+    export_window.resizable(False, False)
 
     Label(export_window, text="Select Table: ").grid(row=0, column=0)
     table_var = StringVar()
@@ -972,6 +977,7 @@ def import_table_from_csv():
     )  
     if db_path:  
         import_window = Toplevel(m)
+        import_window.resizable(False, False)
         import_window.title("Import CSV Options")
 
         Label(import_window, text="Delimiter: ").grid(row=0, column=0)
