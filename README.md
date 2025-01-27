@@ -2,8 +2,7 @@
 
 Maciek
 rozwijamy baze danych:
-* Dodac wiecej Triggerow (obecnie 2)
-* Dodaj funkcje (user-defined function)
+* Dokoncz part 2
 
 Eryk
 rozwoj aplikacji:
