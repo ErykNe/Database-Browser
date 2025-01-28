@@ -252,7 +252,7 @@ def export_db():
             return
 
         selected_types = ", ".join(file_types)
-        print(selected_types, file_types)
+
         for file_type in file_types:
             match file_type: # exporting files depending on what the user has selected
                 case '.db':
@@ -610,6 +610,7 @@ def download_blob(blob_data, file_extension=None):
     except Exception as e:
         messagebox.showerror("Error", f"Failed to save file: {str(e)}")
             
+            
 def switch_tables(event):
     global combo, sqlite, kursor, label_browse_data, label_treedata, h1, v1
     
@@ -646,7 +647,7 @@ def switch_tables(event):
         tree.heading(col, text=col)
         tree.column(col, width=width, anchor="center", stretch=False)
     
-    def on_cell_click(event):
+    def on_cell_click(event, result, column_types):
         # get the clicked item (row) and column
         tree = event.widget
         item_id = tree.identify_row(event.y)  
@@ -816,7 +817,6 @@ def create_db_from_xml(xml_file):
             kursor.execute(trigger_definition)
 
         sqlite.commit()
-        messagebox.showinfo("Success", "Database created successfully from XML file with foreign keys!")
 
     except sqlite3.Error as e:
         messagebox.showerror("Error", f"SQLite Error: {e}")
@@ -825,22 +825,39 @@ def create_db_from_xml(xml_file):
     except Exception as e:
         messagebox.showerror("Error", f"Unexpected Error: {e}")
 
-def import_db():
+def import_db(format):
     global sqlite, kursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata, result_label
 
+    match format:
+        case ".db":
+            filetype = "SQLite Database"
+        case ".sql":
+            filetype = "SQL Database"
+        case ".xml":
+            filetype =  "Extensible Markup Language File"         
+
+
     db_path = filedialog.askopenfilename(
-        title="Select a .db file",
-        filetypes=[("SQLite Database", "*.db")]
+        title=f"Select a {format} file",
+        filetypes=[(filetype, f"*{format}")]
     )
     
-    os.chmod(db_path, 0o666) # asking for access to edit the .db file
+    if format == ".db":
+        os.chmod(db_path, 0o666) # asking for access to edit the .db file
     
     if db_path:  
         try:
             if(sqlite):
                 sqlite.close()
             
-            sqlite = sqlite3.connect(db_path, check_same_thread=False, uri=True)
+            match format:
+                case ".db":
+                    sqlite = sqlite3.connect(db_path, check_same_thread=False, uri=True)
+                case ".sql":
+                    create_db_from_sql(db_path)
+                case ".xml":
+                    create_db_from_xml(db_path)        
+
             kursor = sqlite.cursor()
             result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [str(table[0]) for table in result.fetchall()]
@@ -1034,92 +1051,6 @@ def import_table_from_csv():
 
         Button(import_window, text="Import", command=start_import).grid(row=4, columnspan=2)
 
-def import_db_from_xml():    
-    global sqlite, kursor, sql_input_textbox, print_button, m
-
-    db_path = filedialog.askopenfilename(
-        title="Select a .xml file",
-        filetypes=[("Extensible Markup Language File", "*.xml")]
-    )
-    
-    if db_path:  
-        try:
-            if(sqlite):
-                sqlite.close()
-            
-            create_db_from_xml(db_path)
-            result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tables = [str(table[0]) for table in result.fetchall()]
-
-            combo.set("Select table")
-            combo.config(values=tables)
-            m.title("SQLite Database Manager - " + str(db_path))
-            
-            print_button.pack(side='top', pady=5, anchor='w')
-
-            # Use grid to place sql_input_textbox and result_label next to each other
-            sql_input_textbox.pack(side='top', pady=5, anchor='w', fill='x')  # 'ew' stretches sql_input_textbox horizontally
-            result_label.pack(anchor='w',fill='both')  # 'ew' stretches result_label horizontally
-            children = result_label.winfo_children()
-            if len(children) > 2:
-                children[2].destroy()
-                
-            tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
-            tree.pack(anchor='w', side='top',fill='both')
-            sql_output_textbox.pack(side='top', pady=5, anchor='w', fill='both')
-
-            combo.pack(side='top', pady=0, padx=0, anchor='w')
-            label_treedata.pack(side='top', padx=0, pady=0, fill='both', expand=True)
-            label_db_struct.config(bg='white')
-            get_database_structure()
-            children = label_treedata.winfo_children()
-            if len(children) > 2:
-                children[2].destroy() 
-        except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Error connecting to database: {e}")
-            import_db_from_xml()       
-            
-def import_db_from_sql():    
-    global sqlite, kursor, sql_input_textbox, print_button, m
-
-    db_path = filedialog.askopenfilename(
-        title="Select a .sql file",
-        filetypes=[("SQL Database", "*.sql")]
-    )
-    
-    if db_path:  
-        try:
-            if(sqlite):
-                sqlite.close()
-            
-            create_db_from_sql(db_path) # creating temporary .db file with data from .sql file
-            result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tables = [str(table[0]) for table in result.fetchall()]
-
-            combo.set("Select table")
-            combo.config(values=tables)
-            
-            m.title("SQLite Database Manager - " + str(db_path)) # config all neccesseary things 
-            print_button.pack(side='top', pady=5, anchor='w')
-            sql_input_textbox.pack(side='top', pady=5, anchor='w', fill='x')  
-            result_label.pack(anchor='w',fill='both') 
-            children = result_label.winfo_children()
-            if len(children) > 2:
-                children[2].destroy()
-                
-            tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
-            tree.pack(anchor='w', side='top',fill='both')
-            sql_output_textbox.pack(side='top', pady=5, anchor='w', fill='both')
-            combo.pack(side='top', pady=0, padx=0, anchor='w')
-            label_treedata.pack(side='top', padx=0, pady=0, fill='both', expand=True)
-            label_db_struct.config(bg='white')
-            get_database_structure()
-            children = label_treedata.winfo_children()
-            if len(children) > 2:
-                children[2].destroy() 
-        except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Error connecting to database: {e}")
-            import_db_from_sql()       
 
 def execute_query():
     global h3, v3
@@ -1139,7 +1070,7 @@ def execute_query():
                                 blob_data = file.read()
 
                             query = query[:start - 5] + f"X'{blob_data.hex()}'" + query[end + 1:]
-                            print(query)
+
                         else:
                             messagebox.showerror("Error", f"Image file not found: {image_path}")
                             return
@@ -1165,12 +1096,10 @@ def execute_query():
 
                     columns = [desc[0] for desc in kursor.description] 
                     column_types = [desc[2] for desc in kursor.execute(f"PRAGMA table_info({query.split('FROM ')[1].split()[0]})")]
-                    print(column_types)
 
                     tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
                     tree["show"] = "headings"
                     tree["columns"] = columns
-
 
                     for col in columns:
                         tree.heading(col, text=col, anchor="center")
@@ -1200,12 +1129,10 @@ def execute_query():
             
                             # get the data from the clicked row and column
                             row_values = result[row_index]  
-                            value = row_values[col_index]  
-        
-        
+                            value = row_values[col_index] 
+
                             if column_types[col_index] == "BLOB": # if it was blob then download it
                                 download_blob(value)    
-
 
                     tree.grid(row=0, column=0, sticky="nsew")
                     tree.bind("<Button-1>", on_cell_click)
@@ -1245,17 +1172,16 @@ m.title("SQLite Database Manager")
 m.geometry("1000x500")
 m.resizable(False, False)
 
-
 menuBar = Menu(m)
 filemenu = Menu(menuBar, tearoff=0)
-filemenu.add_command(label="Open Database", command=import_db)
+filemenu.add_command(label="Open Database", command=lambda: import_db(".db"))
 menuBar.add_cascade(label="File", menu=filemenu)
 
 importmenu = Menu(menuBar, tearoff=0)
 
 database_submenu = Menu(importmenu, tearoff=0)
-database_submenu.add_command(label="From SQL File", command=import_db_from_sql)
-database_submenu.add_command(label="From XML File", command=import_db_from_xml)
+database_submenu.add_command(label="From SQL File", command=lambda: import_db(".sql"))
+database_submenu.add_command(label="From XML File", command=lambda: import_db(".xml"))
 
 importmenu.add_cascade(label="Database", menu=database_submenu)
 
@@ -1275,13 +1201,10 @@ exportmenu.add_cascade(label="Table",menu=export_submenu)
 
 menuBar.add_cascade(label="Export", menu=exportmenu)
 
-
 m.config(menu=menuBar)
-
 
 navbar = tkinter.Frame(m, bg='lightgray', padx=5, pady=0)
 navbar.pack(fill='x', side='top')
-
 
 nav_db_struct = tkinter.Button(navbar, text="Database structure", borderwidth=0, relief="flat", bg=m.cget("bg"), command=lambda: switch_view("1"))
 nav_db_struct.pack(side="left")
@@ -1317,8 +1240,6 @@ h2 = tkinter.Scrollbar(label_db_struct, orient = 'horizontal')
 h2.pack(side = BOTTOM, fill = X)
 v2 = tkinter.Scrollbar(label_db_struct)
 v2.pack(side = RIGHT, fill = Y)
-
-
 
 sql_input_textbox = tkinter.Text(label_sql, height=5, width=50)
 sql_output_textbox = tkinter.Text(label_sql, width=50)
