@@ -460,11 +460,16 @@ def insert_into_table():
         columns = kursor.fetchall()
 
         entries = {}
-        for column in columns:
+        columns_per_row = 3  
+        a = 0
+        for i, column in enumerate(columns):
             col_name = column[1]
-            Label(insert_window, text=col_name).pack()
+            row_pos = a + (i // columns_per_row)
+            col_pos = (i % columns_per_row) * 2
+            Label(insert_window, text=col_name).grid(column=col_pos, row=row_pos, padx=5, pady=5)
             entry = Entry(insert_window)
-            entry.pack()
+            entry.grid(column=col_pos + 1, row=row_pos, padx=5, pady=5)
+            
             entries[col_name] = entry
 
         def insert_record():
@@ -481,7 +486,7 @@ def insert_into_table():
             except sqlite3.Error as e:
                 messagebox.showerror("Error", f"Failed to insert record: {e}")
 
-        Button(insert_window, text="Insert", command=insert_record).pack()
+        Button(insert_window, text="Insert", command=insert_record, width=7).grid(column=0, row=3)
 
 def remove_table(table_name):
     query = f"DROP TABLE {table_name}"
@@ -652,6 +657,7 @@ def switch_tables(event):
     children = label_treedata.winfo_children()
     if len(children) > 2:
         children[2].destroy()
+        children[3].destroy()
 
     tree = ttk.Treeview(label_treedata, xscrollcommand=h1.set, yscrollcommand=v1.set)
 
@@ -681,6 +687,7 @@ def switch_tables(event):
         tree = event.widget
         item_id = tree.identify_row(event.y)
         column_id = tree.identify_column(event.x)
+        
 
         if item_id and column_id:
             # get the column index and row index
@@ -692,7 +699,7 @@ def switch_tables(event):
                 # get the data from the clicked row and column
             row_values = result[row_index]
             value = row_values[col_index]
-
+            print(value)
             if column_types[col_index] == "BLOB":  # if it was blob then download it
                 download_blob(value)
 
@@ -711,8 +718,8 @@ def switch_tables(event):
     # bind the click event for handling blob files
     tree.bind("<Button-1>", on_cell_click)
 
-    insert_button = Button(label_browse_data, text="Insert Into Table", command=insert_into_table)
-    insert_button.pack(side='top', pady=5, anchor='w')
+    insert_button = Button(label_treedata, text="+", command=insert_into_table)
+    insert_button.pack(side='top', anchor='w')
 
 def switch_view(view):
     global m, nav_db_struct, nav_browse_data, nav_sql, label_sql, label_browse_data, label_db_struct
