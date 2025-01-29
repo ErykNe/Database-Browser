@@ -8,10 +8,11 @@ from tkinter import *
 from tkinter import ttk
 import sqlite3
 from tkinter import simpledialog
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as et
 
-sqlite = None  
-kursor = None  
+sqlite = None
+kursor = None
+
 
 def export_db():
     if not sqlite:
@@ -22,42 +23,39 @@ def export_db():
     export_window.title("Export database")
     export_window.geometry("650x270")
     export_window.resizable(False, False)
-    
-    
+
     label_frame = LabelFrame(export_window, text="File Details: ")
     label_frame.pack(fill='x', padx=10, pady=10)
-    
+
     file_name_label = Label(label_frame, text="File name:")
     file_name_label.pack(side='left', padx=10, pady=10, anchor='n')
     file_name_var = StringVar(value="name")
     name_entry = Entry(label_frame, textvariable=file_name_var)
     name_entry.pack(side='left', padx=10, pady=10, anchor='n')
-    
+
     file_src_label = Label(label_frame, text="File path:")
     file_src_label.pack(side='left', padx=10, pady=10, anchor='n')
-    
 
-    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop") # set the deafult path to desktop
-    
+    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")  # set the deafult path to desktop
+
     # handle combobox selection
     def on_select(event):
         if var.get() == "Other...":
             folder_path = filedialog.askdirectory(parent=export_window)  # Open folder dialog to select a directory
-            if folder_path:  
-                var.set(folder_path)  
+            if folder_path:
+                var.set(folder_path)
             else:
-                var.set(desktop_path)    
+                var.set(desktop_path)
 
+                # the combobox that asks for directory
 
-    
-    # the combobox that asks for directory
     var = StringVar()
     options = [desktop_path, "Other..."]
     path_combobox = ttk.Combobox(label_frame, textvariable=var, values=options, state="normal")
     path_combobox.pack(fill='x', padx=10, pady=10, anchor='n')
-    path_combobox.bind("<<ComboboxSelected>>", on_select) 
+    path_combobox.bind("<<ComboboxSelected>>", on_select)
 
-    path_combobox.set(desktop_path) # set the deafult path to desktop
+    path_combobox.set(desktop_path)  # set the deafult path to desktop
 
     checkbox_frame = LabelFrame(export_window, text="File Type:")
     checkbox_frame.pack(fill='x', padx=10, pady=10)
@@ -67,7 +65,6 @@ def export_db():
     sql_var = BooleanVar(value=False)
     xml_var = BooleanVar(value=False)
 
-
     db_checkbox = Checkbutton(checkbox_frame, text=".db", variable=db_var)
     db_checkbox.pack(side='left', padx=10, pady=10)
 
@@ -76,22 +73,22 @@ def export_db():
 
     xml_checkbox = Checkbutton(checkbox_frame, text=".xml", variable=xml_var)
     xml_checkbox.pack(side='left', padx=10, pady=10)
-    
+
     def export_db_to_db_file(file_name, selected_path):
         # ensuring if the connection is valid
         if not sqlite or not kursor:
             messagebox.showerror("Error", "Database connection is not established.")
             return
-    
+
         db_file_path = os.path.join(selected_path, f"{file_name}.db")
-    
+
         try:
 
-            new_connection = sqlite3.connect(db_file_path) # opening new connection to write the .db file
+            new_connection = sqlite3.connect(db_file_path)  # opening new connection to write the .db file
             new_kursor = new_connection.cursor()
             kursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
             tables = kursor.fetchall()
-        
+
             for table in tables:
                 table_name = table[0]
                 kursor.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name='{table_name}';")
@@ -100,7 +97,7 @@ def export_db():
                 kursor.execute(f"SELECT * FROM {table_name};")
                 rows = kursor.fetchall()
                 for row in rows:
-                    values = ', '.join('?' for _ in row) 
+                    values = ', '.join('?' for _ in row)
                     insert_query = f"INSERT INTO {table_name} VALUES ({values});"
                     new_kursor.executemany(insert_query, [row])
 
@@ -127,18 +124,18 @@ def export_db():
         if not sqlite or not kursor:
             messagebox.showerror("Error", "Database connection is not established.")
             return
-    
+
         sql_file_path = os.path.join(selected_path, f"{file_name}.sql")
-    
+
         try:
             # writing the .sql file using built-in .dump method
             with open(sql_file_path, 'w') as sql_file:
                 for line in sqlite.iterdump():
                     sql_file.write(f"{line}\n")
-        
-        except Exception as e: # handling errors
+
+        except Exception as e:  # handling errors
             messagebox.showerror("Error", f"Failed to export to SQL file: {str(e)}")
-    
+
     def export_db_to_xml_file(file_name, selected_path):
         if not sqlite or not kursor:
             messagebox.showerror("Error", "Database connection is not established.")
@@ -166,7 +163,8 @@ def export_db():
                         column_name = column[1]
                         column_type = column[2]
                         pk = column[5]
-                        xml_file.write(f'      <column name="{column_name}" type="{column_type}" primary_key="{pk}" />\n')
+                        xml_file.write(
+                            f'      <column name="{column_name}" type="{column_type}" primary_key="{pk}" />\n')
                     xml_file.write('    </schema>\n')
 
                     # write tables
@@ -202,7 +200,7 @@ def export_db():
                     xml_file.write(f'  <view name="{view_name}">\n')
                     xml_file.write(f'    <schema>{view_sql}</schema>\n')
                     xml_file.write('  </view>\n')
-                    
+
                 # exporting triggers
                 kursor.execute("SELECT name, sql FROM sqlite_master WHERE type='trigger';")
                 triggers = kursor.fetchall()
@@ -211,7 +209,7 @@ def export_db():
                     xml_file.write(f'  <trigger name="{trigger_name}">\n')
                     xml_file.write(f'    <schema>{trigger_sql}</schema>\n')
                     xml_file.write('  </trigger>\n')
-                    
+
                 # export relationships (foreign keys)
                 for table in tables:
                     table_name = table[0]
@@ -240,7 +238,7 @@ def export_db():
             file_types.append(".sql")
         if xml_var.get():
             file_types.append(".xml")
-        
+
         if not os.path.isdir(selected_path):
             messagebox.showerror("Error", "Please select a valid directory.")
             return
@@ -254,17 +252,19 @@ def export_db():
         selected_types = ", ".join(file_types)
 
         for file_type in file_types:
-            match file_type: # exporting files depending on what the user has selected
+            match file_type:  # exporting files depending on what the user has selected
                 case '.db':
-                    export_db_to_db_file(file_name, selected_path) 
+                    export_db_to_db_file(file_name, selected_path)
                 case '.sql':
                     export_db_to_sql_file(file_name, selected_path)
                 case '.xml':
                     export_db_to_xml_file(file_name, selected_path)
-        messagebox.showinfo("Success", f"Database exported to:\n{os.path.join(selected_path, file_name)}\nFile types: {selected_types}")
+        messagebox.showinfo("Success",
+                            f"Database exported to:\n{os.path.join(selected_path, file_name)}\nFile types: {selected_types}")
 
     export_button = Button(export_window, text="Export", command=confirm_export, width=18)
-    export_button.pack(pady=20,padx=10, side='left', anchor='n')
+    export_button.pack(pady=20, padx=10, side='left', anchor='n')
+
 
 def create_column(table_name):
     create_column_window = Toplevel(m)
@@ -276,19 +276,19 @@ def create_column(table_name):
 
     columns = ('Name', 'Type', 'Default', 'NN', 'PK', 'AI')
 
-    widget_frame = Frame(label_frame) 
+    widget_frame = Frame(label_frame)
     widget_frame.pack(fill='x', padx=10, pady=5)
 
     row_widgets = []
     variables = []
-    
+
     def create_column_in_db(table_name, variables):
-        column_name = variables[0].get() 
-        column_type = variables[1].get()  
-        default_value = variables[2].get()  
-        nn = variables[3].get() 
-        pk = variables[4].get()  
-        ai = variables[5].get() 
+        column_name = variables[0].get()
+        column_type = variables[1].get()
+        default_value = variables[2].get()
+        nn = variables[3].get()
+        pk = variables[4].get()
+        ai = variables[5].get()
         try:
             query = f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
 
@@ -323,10 +323,10 @@ def create_column(table_name):
             group_frame = Frame(label_frame)
             group_frame.pack(side='left', padx=5, pady=5, anchor='nw')
             widget_label = Label(group_frame, text=col_name, width=5, anchor="nw")
-            widget_label.pack(padx=0)  
+            widget_label.pack(padx=0)
             var = BooleanVar()
             widget = Checkbutton(group_frame, variable=var)
-            widget.pack(side='left', padx=0) 
+            widget.pack(side='left', padx=0)
         else:
             widget_label = Label(widget_frame, text=col_name, width=5, anchor="w")
             widget_label.pack(side='left', padx=5, pady=5)
@@ -337,13 +337,14 @@ def create_column(table_name):
         row_widgets.append(widget)
         variables.append(var)
 
-    Button(create_column_window, text="Create Column", command=lambda: create_column_in_db(table_name, variables)).pack(side='left', padx=5, pady=10, anchor='n')
+    Button(create_column_window, text="Create Column", command=lambda: create_column_in_db(table_name, variables)).pack(
+        side='left', padx=5, pady=10, anchor='n')
+
 
 def create_table():
     create_window = Toplevel(m)
     create_window.title("Create Table")
     create_window.geometry("700x325")
-
 
     label_frame = LabelFrame(create_window, text="Table Name: ")
     label_frame.pack(fill='x')
@@ -366,11 +367,12 @@ def create_table():
         row_widgets = []
         variables = []
         for col_index, col_name in enumerate(columns):
-            x, y, width, height = tree.bbox(row_id, f"#{col_index+1}")
+            x, y, width, height = tree.bbox(row_id, f"#{col_index + 1}")
 
             if col_name == 'Type':
                 var = StringVar()
-                widget = ttk.Combobox(create_window, textvariable=var, values=["INTEGER", "TEXT", "BLOB", "REAL", "NUMERIC"])
+                widget = ttk.Combobox(create_window, textvariable=var,
+                                      values=["INTEGER", "TEXT", "BLOB", "REAL", "NUMERIC"])
             elif col_name in ['NN', 'PK', 'AI']:
                 var = BooleanVar()
                 widget = Checkbutton(create_window, variable=var)
@@ -385,7 +387,7 @@ def create_table():
             row_widgets.append(widget)
             variables.append(var)
 
-        widget_refs.append((row_widgets))
+        widget_refs.append(row_widgets)
         variables_refs.append(variables)
 
     def remove_row():
@@ -436,25 +438,60 @@ def create_table():
             create_window.destroy()
             get_database_structure()
         except sqlite3.Error as e:
-            messagebox.showerror("Error",f"Error creating table: {e}")
-
-
+            messagebox.showerror("Error", f"Error creating table: {e}")
 
     tree.pack(anchor='w', fill='x')
 
     Button(create_window, text="Add Row", command=add_row).pack(side='left', padx=5, pady=5, anchor='n')
     Button(create_window, text="Remove Row", command=remove_row).pack(side='left', padx=5, pady=5, anchor='n')
-    Button(create_window, text="Create Table", command=execute_create_table_query).pack(side='left', padx=5, pady=5, anchor='n')
+    Button(create_window, text="Create Table", command=execute_create_table_query).pack(side='left', padx=5, pady=5,
+                                                                                        anchor='n')
+def insert_into_table():
+        selected_table = combo.get()
+        if not selected_table or selected_table == "Select table":
+            messagebox.showerror("Error", "Please select a table.")
+            return
 
+        insert_window = Toplevel(m)
+        insert_window.title(f"Insert into {selected_table}")
+        insert_window.resizable(False, False)
+
+        kursor.execute(f"PRAGMA table_info({selected_table})")
+        columns = kursor.fetchall()
+
+        entries = {}
+        for column in columns:
+            col_name = column[1]
+            Label(insert_window, text=col_name).pack()
+            entry = Entry(insert_window)
+            entry.pack()
+            entries[col_name] = entry
+
+        def insert_record():
+            values = {col: entry.get() for col, entry in entries.items()}
+            columns_str = ', '.join(values.keys())
+            placeholders = ', '.join(['?' for _ in values])
+            query = f"INSERT INTO {selected_table} ({columns_str}) VALUES ({placeholders})"
+            try:
+                kursor.execute(query, list(values.values()))
+                sqlite.commit()
+                messagebox.showinfo("Success", "Record inserted successfully.")
+                insert_window.destroy()
+                switch_tables(None)
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to insert record: {e}")
+
+        Button(insert_window, text="Insert", command=insert_record).pack()
 
 def remove_table(table_name):
     query = f"DROP TABLE {table_name}"
     kursor.execute(query)
     sqlite.commit()
     get_database_structure()
-    
+
+
 def remove_column(table_name, column_name):
-    query = f"ALTER TABLE {table_name} DROP COLUMN {column_name}"    
+    query = f"ALTER TABLE {table_name} DROP COLUMN {column_name}"
     kursor.execute(query)
     sqlite.commit()
     get_database_structure()
@@ -477,7 +514,7 @@ def get_database_structure():
     tree.heading("Type", text="Type", anchor='w')
     tree.heading("Schema", text="Schema", anchor='w')
 
-    longest_schema_length = 0 # for column lengths adjustement
+    longest_schema_length = 0  # for column lengths adjustement
 
     # configure underline tag for primary keys
     tree.tag_configure("underline", font=("", 9, "underline"))
@@ -490,7 +527,7 @@ def get_database_structure():
 
     for table in tables:
         name = str(table[0])
-        schema = str(table[2]).replace("\n", " ") # making the single-line schema
+        schema = str(table[2]).replace("\n", " ")  # making the single-line schema
 
         if longest_schema_length < len(schema):
             longest_schema_length = len(schema)
@@ -501,7 +538,8 @@ def get_database_structure():
         sqlite.commit()
         for struct in table_struct:
             result = f'"{struct[1]}" {struct[2]} {"NOT NULL " if struct[3] == 1 else ""} {"PRIMARY KEY" if struct[5] == 1 else ""}'
-            column_item = tree.insert(table_item, "end", text=str(struct[1]), values=(str(struct[2]), result), tags=("column",))
+            column_item = tree.insert(table_item, "end", text=str(struct[1]), values=(str(struct[2]), result),
+                                      tags=("column",))
 
             if struct[5] == 1:
                 tree.item(column_item, tags=("column", "underline"))
@@ -557,7 +595,7 @@ def get_database_structure():
             tree.selection_set(selected_item)
             table_name = tree.item(selected_item, "text")
             menu = tkinter.Menu(m, tearoff=0)
-            menu.add_command(label="Remove Table" ,command=lambda: remove_table(table_name))
+            menu.add_command(label="Remove Table", command=lambda: remove_table(table_name))
             menu.add_command(label="Add Column", command=lambda: create_column(table_name))
             menu.post(event.x_root, event.y_root)
         elif "column" in selected_tags:
@@ -565,33 +603,35 @@ def get_database_structure():
             table_name = tree.item(tree.parent(selected_item), "text")
             column_name = tree.item(selected_item, "text")
             menu = tkinter.Menu(m, tearoff=0)
-            menu.add_command(label="Remove Column" ,command=lambda: remove_column(table_name, column_name))
+            menu.add_command(label="Remove Column", command=lambda: remove_column(table_name, column_name))
             menu.post(event.x_root, event.y_root)
 
     tree.bind("<Button-3>", right_click)
+
 
 def get_file_extension_from_blob(blob_data):
     # getting the image extension from blob data by interpretation of magic numbers
     if blob_data.startswith(b'\x89PNG'):
         return 'png'
-    
+
     elif blob_data.startswith(b'\xFF\xD8\xFF'):
         return 'jpg'
-    
+
     elif blob_data.startswith(b'GIF'):
         return 'gif'
-   
+
     return 'bin'
+
 
 def download_blob(blob_data, file_extension=None):
     try:
         if not file_extension:
-            file_extension = get_file_extension_from_blob(blob_data) 
+            file_extension = get_file_extension_from_blob(blob_data)
 
             if not file_extension:
                 file_extension = "bin"
-        
-        file_path = filedialog.asksaveasfilename(defaultextension=f".{file_extension}", 
+
+        file_path = filedialog.asksaveasfilename(defaultextension=f".{file_extension}",
                                                  filetypes=[(f"{file_extension.upper()} files", f"*.{file_extension}")])
         if file_path:
             with open(file_path, 'wb') as file:
@@ -599,37 +639,36 @@ def download_blob(blob_data, file_extension=None):
             messagebox.showinfo("Success", f"File successfully saved to {file_path}")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to save file: {str(e)}")
-            
-            
+
+
 def switch_tables(event):
     global combo, sqlite, kursor, label_browse_data, label_treedata, h1, v1
-    
     selection = combo.get()
     query = f"SELECT * FROM {selection}"
-    
+
     result = kursor.execute(query).fetchall()
     columns = [description[1] for description in kursor.execute(f"PRAGMA table_info({selection})").fetchall()]
-    
+
     children = label_treedata.winfo_children()
     if len(children) > 2:
-        children[2].destroy() 
-    
+        children[2].destroy()
+
     tree = ttk.Treeview(label_treedata, xscrollcommand=h1.set, yscrollcommand=v1.set)
-    
+
     h1.config(command=tree.xview)
     v1.config(command=tree.yview)
-    
+
     tree["columns"] = columns
     tree["show"] = "headings"
-    
+
     max_lengths = [len(col) for col in columns]
-    
+
     column_types = [desc[2] for desc in kursor.execute(f"PRAGMA table_info({selection})").fetchall()]
-    
+
     for row in result:
         for i, value in enumerate(row):
             max_lengths[i] = max(max_lengths[i], len(str(value)))
-    
+
     for i, col in enumerate(columns):
         width = max(max_lengths[i] * 10, 100)
         if column_types[i] == "BLOB":
@@ -640,22 +679,21 @@ def switch_tables(event):
     def on_cell_click(event):
         # get the clicked item (row) and column
         tree = event.widget
-        item_id = tree.identify_row(event.y)  
-        column_id = tree.identify_column(event.x) 
+        item_id = tree.identify_row(event.y)
+        column_id = tree.identify_column(event.x)
 
         if item_id and column_id:
             # get the column index and row index
             col_index = int(column_id[1:]) - 1
             row_index = int(item_id[1:]) - 1
             if row_index < 0 or row_index >= len(result):
-                return 
-            
-            # get the data from the clicked row and column
-            row_values = result[row_index]  
-            value = row_values[col_index]  
-        
-        
-            if column_types[col_index] == "BLOB": # if it was blob then download it
+                return
+
+                # get the data from the clicked row and column
+            row_values = result[row_index]
+            value = row_values[col_index]
+
+            if column_types[col_index] == "BLOB":  # if it was blob then download it
                 download_blob(value)
 
     for row in result:
@@ -665,23 +703,25 @@ def switch_tables(event):
                 values.append("BLOB")
             else:
                 values.append(value)
-        
+
         tree.insert('', 'end', values=values, tags=[f'row_{row[0]}'])
-    
+
     tree.pack(padx=0, pady=0, anchor='w')
-    
-    # bind the click event for handling blob files 
+
+    # bind the click event for handling blob files
     tree.bind("<Button-1>", on_cell_click)
-        
+
+    insert_button = Button(label_browse_data, text="Insert Into Table", command=insert_into_table)
+    insert_button.pack(side='top', pady=5, anchor='w')
 
 def switch_view(view):
     global m, nav_db_struct, nav_browse_data, nav_sql, label_sql, label_browse_data, label_db_struct
-    match(view): # changing tabs
+    match (view):  # changing tabs
         case "1":
             nav_db_struct.config(bg=m.cget("bg"))
             nav_browse_data.config(bg='lightgray')
             nav_sql.config(bg='lightgray')
-            
+
             label_db_struct.pack(side='left', fill='both', expand=True)
             label_browse_data.pack_forget()
             label_sql.pack_forget()
@@ -693,15 +733,16 @@ def switch_view(view):
             label_db_struct.pack_forget()
             label_browse_data.pack(side='left', fill='both', expand=True)
             label_sql.pack_forget()
-        case "3":    
+        case "3":
             nav_db_struct.config(bg='lightgray')
             nav_browse_data.config(bg='lightgray')
             nav_sql.config(bg=m.cget("bg"))
-            
+
             label_db_struct.pack_forget()
             label_browse_data.pack_forget()
-            label_sql.pack(fill='x', pady=(2, 0)) 
-    
+            label_sql.pack(fill='x', pady=(2, 0))
+
+
 def create_db_from_sql(sql_file):
     global sqlite, kursor
     try:
@@ -710,15 +751,16 @@ def create_db_from_sql(sql_file):
 
         sqlite = sqlite3.connect("temp.db")
         kursor = sqlite.cursor()
-        
+
         with open(sql_file, 'r') as f:
             sql = f.read()
-            
+
         kursor.executescript(sql)
         sqlite.commit()
 
     except sqlite3.Error as e:
-        messagebox.showerror("Error","Error creating database: {e}")
+        messagebox.showerror("Error", "Error creating database: {e}")
+
 
 def create_db_from_xml(xml_file):
     global sqlite, kursor
@@ -728,20 +770,20 @@ def create_db_from_xml(xml_file):
 
         sqlite = sqlite3.connect("temp.db")
         kursor = sqlite.cursor()
-        
+
         kursor.execute("PRAGMA foreign_keys = ON;")
 
         with open(xml_file, "r", encoding="utf-8") as f:
             content = f.read()
-        
+
         # extracting data to the closing </dataset> tag
         if "</dataset>" in content:
             valid_xml = content.split("</dataset>")[0] + "</dataset>"
         else:
-            raise ET.ParseError("Missing closing </dataset> tag.")
+            raise et.ParseError("Missing closing </dataset> tag.")
 
         # ET parse the valid XML
-        root = ET.fromstring(valid_xml)
+        root = et.fromstring(valid_xml)
 
         relations = {}
         for relation in root.findall("relation"):
@@ -787,14 +829,14 @@ def create_db_from_xml(xml_file):
                             # decode the Base64 
                             decoded = base64.b64decode(encrypted)
                             try:
-                                decoded = decoded.decode('utf-8')  
+                                decoded = decoded.decode('utf-8')
                             except UnicodeDecodeError:
-                                pass 
+                                pass
                             col_values.append(decoded)
                         else:
-                            col_values.append(None)  
+                            col_values.append(None)
 
-                    # insert the decoded value into the database
+                            # insert the decoded value into the database
                     insert_sql = f"INSERT INTO {table_name} ({', '.join(col_names)}) VALUES ({', '.join(['?' for _ in col_names])});"
                     kursor.execute(insert_sql, tuple(col_values))
 
@@ -810,10 +852,11 @@ def create_db_from_xml(xml_file):
 
     except sqlite3.Error as e:
         messagebox.showerror("Error", f"SQLite Error: {e}")
-    except ET.ParseError as e:
+    except et.ParseError as e:
         messagebox.showerror("Error", f"XML Parse Error: {e}")
     except Exception as e:
         messagebox.showerror("Error", f"Unexpected Error: {e}")
+
 
 def import_db(format):
     global sqlite, kursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata, result_label
@@ -824,29 +867,28 @@ def import_db(format):
         case ".sql":
             filetype = "SQL Database"
         case ".xml":
-            filetype =  "Extensible Markup Language File"         
-
+            filetype = "Extensible Markup Language File"
 
     db_path = filedialog.askopenfilename(
         title=f"Select a {format} file",
         filetypes=[(filetype, f"*{format}")]
     )
-    
+
     if format == ".db":
-        os.chmod(db_path, 0o666) # asking for access to edit the .db file
-    
-    if db_path:  
+        os.chmod(db_path, 0o666)  # asking for access to edit the .db file
+
+    if db_path:
         try:
-            if(sqlite):
+            if sqlite:
                 sqlite.close()
-            
+
             match format:
                 case ".db":
                     sqlite = sqlite3.connect(db_path, check_same_thread=False, uri=True)
                 case ".sql":
                     create_db_from_sql(db_path)
                 case ".xml":
-                    create_db_from_xml(db_path)        
+                    create_db_from_xml(db_path)
 
             kursor = sqlite.cursor()
             result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -854,17 +896,17 @@ def import_db(format):
 
             combo.set("Select table")
             combo.config(values=tables)
-            
-            m.title("SQLite Database Manager - " + str(db_path)) # config all neccesseary widgets
+
+            m.title("SQLite Database Manager - " + str(db_path))  # config all neccesseary widgets
             print_button.pack(side='top', pady=5, anchor='w')
-            sql_input_textbox.pack(side='top', pady=5, anchor='w', fill='x')  
-            result_label.pack(anchor='w',fill='both') 
+            sql_input_textbox.pack(side='top', pady=5, anchor='w', fill='x')
+            result_label.pack(anchor='w', fill='both')
             children = result_label.winfo_children()
             if len(children) > 2:
                 children[2].destroy()
-                
+
             tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
-            tree.pack(anchor='w', side='top',fill='both')
+            tree.pack(anchor='w', side='top', fill='both')
             sql_output_textbox.pack(side='top', pady=5, anchor='w', fill='both')
             combo.pack(side='top', pady=0, padx=0, anchor='w')
             label_treedata.pack(side='top', padx=0, pady=0, fill='both', expand=True)
@@ -872,11 +914,12 @@ def import_db(format):
             get_database_structure()
             children = label_treedata.winfo_children()
             if len(children) > 2:
-                children[2].destroy() 
-                
+                children[2].destroy()
+
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error connecting to database: {e}")
             import_db()
+
 
 def export_table_to_csv():
     global sqlite, kursor, combo, m
@@ -885,7 +928,6 @@ def export_table_to_csv():
         messagebox.showerror("Error", "No database connection found.")
         return
 
-    
     kursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = [row[0] for row in kursor.fetchall()]
 
@@ -901,20 +943,18 @@ def export_table_to_csv():
     table_var = StringVar()
     table_combo = ttk.Combobox(export_window, textvariable=table_var, values=tables, state="readonly")
     table_combo.grid(row=0, column=1)
-    
+
     Label(export_window, text="Select path:").grid(row=1, column=0)
-    
 
     desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
-    
-    
+
     def selection(event):
         if combo_var.get() == "Other...":
-            folder_path = filedialog.askdirectory(parent=export_window) 
-            if folder_path: 
-                combo_var.set(folder_path)  
+            folder_path = filedialog.askdirectory(parent=export_window)
+            if folder_path:
+                combo_var.set(folder_path)
             else:
-                combo_var.set(desktop_path)    
+                combo_var.set(desktop_path)
 
     combo_var = StringVar()
     options = [desktop_path, "Other..."]
@@ -922,7 +962,7 @@ def export_table_to_csv():
     combobox.grid(row=1, column=1)
     combobox.bind("<<ComboboxSelected>>", selection)
     combobox.set(desktop_path)
-    
+
     Label(export_window, text="Delimiter: ").grid(row=2, column=0)
     delimiter_var = StringVar(value=",")
     delimiter_entry = Entry(export_window, textvariable=delimiter_var)
@@ -937,7 +977,7 @@ def export_table_to_csv():
     encoding_var = StringVar(value="UTF-8")
     encoding_entry = Entry(export_window, textvariable=encoding_var)
     encoding_entry.grid(row=4, column=1)
-    
+
     def export():
         selected_table = table_var.get()
         if not selected_table:
@@ -962,8 +1002,8 @@ def export_table_to_csv():
 
             with open(csv_path, mode="w", newline="", encoding=encoding) as csv_file:
                 writer = csv.writer(csv_file, delimiter=delimiter, quotechar=quote_char, quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(columns) 
-                writer.writerows(rows)  
+                writer.writerow(columns)
+                writer.writerows(rows)
 
             messagebox.showinfo("Success", f"Table exported successfully to {csv_path}")
             export_window.destroy()
@@ -972,7 +1012,8 @@ def export_table_to_csv():
             messagebox.showerror("Error", f"Failed to export table: {e}")
 
     Button(export_window, text="Export", command=export).grid(row=5, column=0, columnspan=2)
-    
+
+
 def import_table_from_csv():
     global sqlite, kursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata
     if not sqlite:
@@ -981,8 +1022,8 @@ def import_table_from_csv():
     db_path = filedialog.askopenfilename(
         title="Select a .csv file",
         filetypes=[("Comma-Separated Values Files", "*.csv")]
-    )  
-    if db_path:  
+    )
+    if db_path:
         import_window = Toplevel(m)
         import_window.resizable(False, False)
         import_window.title("Import CSV Options")
@@ -1017,7 +1058,7 @@ def import_table_from_csv():
                         columns = ', '.join([f'"{header}" TEXT' for header in headers])
                         kursor.execute(f'CREATE TABLE IF NOT EXISTS "{table_name}" ({columns});')
                     else:
-                        headers = [f"Column{i+1}" for i in range(len(next(reader)))]
+                        headers = [f"Column{i + 1}" for i in range(len(next(reader)))]
                         columns = ', '.join([f'"{header}" TEXT' for header in headers])
                         kursor.execute(f'CREATE TABLE IF NOT EXISTS "{table_name}" ({columns});')
                         f.seek(0)
@@ -1028,10 +1069,10 @@ def import_table_from_csv():
 
                     sqlite.commit()
                     messagebox.showinfo("Success", f"Data imported into table '{table_name}'.")
-                    
+
                     combo['values'] = [table_name] + list(combo['values'])
                     combo.set(table_name)
-            
+
                     get_database_structure()
 
             except Exception as e:
@@ -1045,32 +1086,32 @@ def import_table_from_csv():
 def execute_query():
     global h3, v3
     if sqlite:
-        query = sql_input_textbox.get(1.0, "end-1c").strip()  
+        query = sql_input_textbox.get(1.0, "end-1c").strip()
         if not query or query == "":
             messagebox.showerror("Error", "No query typed in")
             return
         try:
             if "blob(" in query.lower():
-                    new_query = ""
-                    start = query.lower().find("blob(") + 5
-                    end = query.lower().find(")", start)
-                    if start > 0 and end > 0:
-                        image_path = query[start + 1: end - 1]  
-                        if os.path.exists(image_path):  
-                            with open(image_path, "rb") as file:
-                                blob_data = file.read()
+                new_query = ""
+                start = query.lower().find("blob(") + 5
+                end = query.lower().find(")", start)
+                if start > 0 and end > 0:
+                    image_path = query[start + 1: end - 1]
+                    if os.path.exists(image_path):
+                        with open(image_path, "rb") as file:
+                            blob_data = file.read()
 
-                            new_query = query[:start - 5] + f"X'{blob_data.hex()}'" + query[end + 1:]
+                        new_query = query[:start - 5] + f"X'{blob_data.hex()}'" + query[end + 1:]
 
-                        else:
-                            messagebox.showerror("Error", f"Image file not found: {image_path}")
-                            return
                     else:
-                        messagebox.showerror("Error", "Invalid BLOB function or image path in query.")
-                        return    
-                    
-                    kursor.execute(new_query)
-            else:    
+                        messagebox.showerror("Error", f"Image file not found: {image_path}")
+                        return
+                else:
+                    messagebox.showerror("Error", "Invalid BLOB function or image path in query.")
+                    return
+
+                kursor.execute(new_query)
+            else:
                 kursor.execute(query)
             # checking if its a select query to create treeview displaying the output 
             if query.lower().startswith("select"):
@@ -1086,8 +1127,9 @@ def execute_query():
                     sql_output_textbox.insert("insert", f"Execution finished without errors.\n{query}\n")
                     sql_output_textbox.config(state='disabled')
 
-                    columns = [desc[0] for desc in kursor.description] 
-                    column_types = [desc[2] for desc in kursor.execute(f"PRAGMA table_info({query.split('FROM ')[1].split()[0]})")]
+                    columns = [desc[0] for desc in kursor.description]
+                    column_types = [desc[2] for desc in
+                                    kursor.execute(f"PRAGMA table_info({query.split('FROM ')[1].split()[0]})")]
 
                     tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
                     tree["show"] = "headings"
@@ -1105,26 +1147,26 @@ def execute_query():
                             else:
                                 values.append(value)
                         tree.insert('', 'end', values=values, tags=[f'row_{i}_{row[0]}'])
-                        
+
                     def on_cell_click(event):
                         # get the clicked item (row) and column
                         tree = event.widget
-                        item_id = tree.identify_row(event.y)  
-                        column_id = tree.identify_column(event.x) 
+                        item_id = tree.identify_row(event.y)
+                        column_id = tree.identify_column(event.x)
 
                         if item_id and column_id:
                             # get the column index and row index
                             col_index = int(column_id[1:]) - 1
                             row_index = int(item_id[1:]) - 1
                             if row_index < 0 or row_index >= len(result):
-                                return 
-            
-                            # get the data from the clicked row and column
-                            row_values = result[row_index]  
-                            value = row_values[col_index] 
+                                return
 
-                            if column_types[col_index] == "BLOB": # if it was blob then download it
-                                download_blob(value)    
+                                # get the data from the clicked row and column
+                            row_values = result[row_index]
+                            value = row_values[col_index]
+
+                            if column_types[col_index] == "BLOB":  # if it was blob then download it
+                                download_blob(value)
 
                     tree.grid(row=0, column=0, sticky="nsew")
                     tree.bind("<Button-1>", on_cell_click)
@@ -1144,20 +1186,21 @@ def execute_query():
                     sql_output_textbox.delete(1.0, "end")
                     sql_output_textbox.insert("insert", f"No results found for query:\n{query}\n")
                     sql_output_textbox.config(state="disabled")
-            else: #for other queries
+            else:  # for other queries
                 for child in result_label.winfo_children():
                     child.destroy()
                 sqlite.commit()
                 get_database_structure()
                 sql_output_textbox.config(state='normal')
                 sql_output_textbox.delete(1.0, "end")
-                sql_output_textbox.insert("insert",f"Execution finished without errors.\nAt line 1:\n{query}\n")
+                sql_output_textbox.insert("insert", f"Execution finished without errors.\nAt line 1:\n{query}\n")
                 sql_output_textbox.config(state='disabled')
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error executing query: {e}")
             sql_output_textbox.config(state='normal')
             sql_output_textbox.delete(1.0, "end")
             sql_output_textbox.config(state='disabled')
+
 
 m = tkinter.Tk()
 m.title("SQLite Database Manager")
@@ -1184,12 +1227,12 @@ importmenu.add_cascade(label="Table", menu=table_submenu)
 menuBar.add_cascade(label="Import", menu=importmenu)
 
 exportmenu = Menu(menuBar, tearoff=0)
-exportmenu.add_command(label="Database",command=export_db)
+exportmenu.add_command(label="Database", command=export_db)
 
 export_submenu = Menu(exportmenu, tearoff=0)
 export_submenu.add_command(label="To CSV File", command=export_table_to_csv)
 
-exportmenu.add_cascade(label="Table",menu=export_submenu)
+exportmenu.add_cascade(label="Table", menu=export_submenu)
 
 menuBar.add_cascade(label="Export", menu=exportmenu)
 
@@ -1198,21 +1241,25 @@ m.config(menu=menuBar)
 navbar = tkinter.Frame(m, bg='lightgray', padx=5, pady=0)
 navbar.pack(fill='x', side='top')
 
-nav_db_struct = tkinter.Button(navbar, text="Database structure", borderwidth=0, relief="flat", bg=m.cget("bg"), command=lambda: switch_view("1"))
+nav_db_struct = tkinter.Button(navbar, text="Database structure", borderwidth=0, relief="flat", bg=m.cget("bg"),
+                               command=lambda: switch_view("1"))
 nav_db_struct.pack(side="left")
+
 
 def on_right_click(event):
     menu = tkinter.Menu(m, tearoff=0)
     menu.add_command(label="Refresh", command=get_database_structure)
     menu.post(event.x_root, event.y_root)
 
-nav_db_struct.bind("<Button-3>", on_right_click)
-    
 
-nav_browse_data = tkinter.Button(navbar, text="Browse data", borderwidth=0, relief="flat", bg='lightgray', command=lambda: switch_view("2"))
+nav_db_struct.bind("<Button-3>", on_right_click)
+
+nav_browse_data = tkinter.Button(navbar, text="Browse data", borderwidth=0, relief="flat", bg='lightgray',
+                                 command=lambda: switch_view("2"))
 nav_browse_data.pack(side="left")
 
-nav_sql = tkinter.Button(navbar, text="Execute SQL", borderwidth=0, relief="flat", bg='lightgray', command=lambda: switch_view("3"))
+nav_sql = tkinter.Button(navbar, text="Execute SQL", borderwidth=0, relief="flat", bg='lightgray',
+                         command=lambda: switch_view("3"))
 nav_sql.pack(side="left")
 
 label_sql = tkinter.Frame(m, padx=0, pady=0)
@@ -1223,24 +1270,24 @@ label_db_struct.pack(side='left', fill='both', expand=True)
 label_browse_data = tkinter.Frame(m, padx=0, pady=0)
 label_treedata = tkinter.Frame(label_browse_data, bg="white", padx=0, pady=0)
 
-h1 = tkinter.Scrollbar(label_treedata, orient = 'horizontal')
-h1.pack(side = BOTTOM, fill = X)
+h1 = tkinter.Scrollbar(label_treedata, orient='horizontal')
+h1.pack(side=BOTTOM, fill=X)
 v1 = tkinter.Scrollbar(label_treedata)
-v1.pack(side = RIGHT, fill = Y)
+v1.pack(side=RIGHT, fill=Y)
 
-h2 = tkinter.Scrollbar(label_db_struct, orient = 'horizontal')
-h2.pack(side = BOTTOM, fill = X)
+h2 = tkinter.Scrollbar(label_db_struct, orient='horizontal')
+h2.pack(side=BOTTOM, fill=X)
 v2 = tkinter.Scrollbar(label_db_struct)
-v2.pack(side = RIGHT, fill = Y)
+v2.pack(side=RIGHT, fill=Y)
 
 sql_input_textbox = tkinter.Text(label_sql, height=5, width=50)
 sql_output_textbox = tkinter.Text(label_sql, width=50)
 result_label = tkinter.Frame(label_sql, width=50, height=5, bg='white')
 
-h3 = tkinter.Scrollbar(result_label, orient = 'horizontal')
-h3.pack(side = BOTTOM, fill = X)
+h3 = tkinter.Scrollbar(result_label, orient='horizontal')
+h3.pack(side=BOTTOM, fill=X)
 v3 = tkinter.Scrollbar(result_label)
-v3.pack(side = RIGHT, fill = Y)
+v3.pack(side=RIGHT, fill=Y)
 
 print_button = tkinter.Button(label_sql, text="Execute Query", command=execute_query)
 
