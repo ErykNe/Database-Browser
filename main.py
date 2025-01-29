@@ -637,7 +637,7 @@ def switch_tables(event):
         tree.heading(col, text=col)
         tree.column(col, width=width, anchor="center", stretch=False)
     
-    def on_cell_click(event, result, column_types):
+    def on_cell_click(event):
         # get the clicked item (row) and column
         tree = event.widget
         item_id = tree.identify_row(event.y)  
