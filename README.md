@@ -2,7 +2,8 @@
 
 Maciek
 rozwijamy baze danych:
-* Dokoncz part 2
+* Custom function sql
+* Skroc kod python
 
 Eryk
 rozwoj aplikacji:
