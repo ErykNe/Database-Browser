@@ -343,23 +343,23 @@ def create_table():
     create_window = Toplevel(m)
     create_window.title("Create Table")
     create_window.geometry("700x325")
-    create_window.resizable(False, False)
-    
+
 
     label_frame = LabelFrame(create_window, text="Table Name: ")
     label_frame.pack(fill='x')
-    name_var = StringVar(value="name")
-    name_entry = Entry(label_frame, textvariable=name_var)
-    name_entry.pack(side='top', anchor='w', padx=10, pady=10)
-    
+    delimiter_var = StringVar(value="name")
+    delimiter_entry = Entry(label_frame, textvariable=delimiter_var)
+    delimiter_entry.pack(side='top', anchor='w', padx=10, pady=10)
+
     columns = ('Name', 'Type', 'NN', 'PK', 'AI', 'Default')
     tree = ttk.Treeview(create_window, columns=columns, show='headings')
     for col in columns:
         tree.heading(col, text=col)
         tree.column(col, width=100)
 
-    widgets = []
-    variables = []
+    # Always visible widgets setup
+    widget_refs = []
+    variables_refs = []
 
     def add_row():
         row_id = tree.insert('', 'end', values=["" for _ in columns])
@@ -385,98 +385,80 @@ def create_table():
             row_widgets.append(widget)
             variables.append(var)
 
-        widgets.append((row_widgets))
-        variables.append(variables)
+        widget_refs.append((row_widgets))
+        variables_refs.append(variables)
 
     def remove_row():
         selected_item = tree.selection()
         if selected_item:
             tree.delete(selected_item)
-            for idx, widgets in enumerate(widgets): 
-                if tree.get_children()[idx] == selected_item[0]:  # match by treeview item ID
+            for idx, widgets in enumerate(widget_refs):  # No unpacking of `rid`
+                if tree.get_children()[idx] == selected_item[0]:  # Match by treeview item ID
                     for widget in widgets:
                         widget.destroy()
-                    widgets.pop(idx)
-                    variables.pop(idx) 
+                    widget_refs.pop(idx)
+                    variables_refs.pop(idx)  # Remove corresponding variables
                     break
         elif tree.get_children():
             last_item = tree.get_children()[-1]
             tree.delete(last_item)
-            widgets = widgets.pop()  
-            variables.pop()  # remove corresponding variables
+            widgets = widget_refs.pop()  # No `rid` here, just the widget list
+            variables_refs.pop()  # Remove corresponding variables
             for widget in widgets:
                 widget.destroy()
 
     def execute_create_table_query():
-        if not widgets or widgets == []:
-            messagebox.showerror("Error", "Error creating table: No columns provided")
-            return
+        print(widget_refs)
+        print(variables_refs)
+        query = f"CREATE TABLE {delimiter_entry.get()} ("
 
-        table_name = name_entry.get().strip()
-        if not table_name:
-            messagebox.showerror("Error", "Error creating table: Table name cannot be empty")
-            return
+        for variables in variables_refs:
+            column_name = variables[0].get().strip()
+            column_type = variables[1].get().strip()
+            is_nn = "NOT NULL" if variables[2].get() == 1 else ""
+            is_pk = "PRIMARY KEY" if variables[3].get() == 1 else ""
+            is_ai = "AUTOINCREMENT" if variables[4].get() == 1 and variables[3].get() != 1 else ""
+            default_value = f"DEFAULT '{variables[5].get()}'" if variables[5].get() != "" else ""
 
-        query = f"CREATE TABLE {table_name} ("
-        column_definitions = []
+            column_definition = f"{column_name} {column_type} {is_nn} {is_pk} {is_ai} {default_value}".strip()
 
+            query += column_definition + ", "
+
+        query = query.rstrip(", ") + ");"
+
+        print(query)
         try:
-            for idx, variables in enumerate(widgets):
-                column_name = variables[0].get().strip()
-                column_type = variables[1].get().strip()
-                not_null = "NOT NULL" if variables[2].get() == 1 else ""
-                primary_key = "PRIMARY KEY" if variables[3].get() == 1 else ""
-                auto_increment = "AUTOINCREMENT" if variables[4].get() == 1 and column_type.upper() == "INTEGER" else ""
-                default_value = f"DEFAULT '{variables[5].get()}'" if variables[5].get() != "" else ""
+            kursor.execute(query)
+            sqlite.commit()
+            messagebox.showinfo("Success", f"Successfully created table '{delimiter_entry.get()}'.")
+            combo['values'] = [delimiter_entry.get()] + list(combo['values'])
+            combo.set(delimiter_entry.get())
+            create_window.destroy()
+            get_database_structure()
+        except sqlite3.Error as e:
+            messagebox.showerror("Error",f"Error creating table: {e}")
 
-                if not column_name:
-                    messagebox.showerror("Error", f"Error in column {idx + 1}: Column name cannot be empty.")
-                    return
-                if not column_name.isidentifier():
-                    messagebox.showerror("Error", f"Error in column {idx + 1}: Invalid column name '{column_name}'.")
-                    return
 
-                if auto_increment and not primary_key:
-                    messagebox.showerror(
-                        "Error", f"Error in column {idx + 1}: AUTOINCREMENT requires the column to be a PRIMARY KEY."
-                    )
-                    return
 
-                if default_value and column_type.upper() == "INTEGER":
-                    try:
-                        int(variables[5].get())  
-                    except ValueError:
-                        messagebox.showerror(
-                            "Error", f"Error in column {idx + 1}: Default value '{variables[5].get()}' is not a valid INTEGER."
-                        )
-                        return
-
-                column_definition = f"{column_name} {column_type} {not_null} {primary_key} {auto_increment} {default_value}".strip()
-                column_definitions.append(column_definition)
-
-                query += ", ".join(column_definitions) + ");"
-
-                try:
-                    kursor.execute(query)
-                    sqlite.commit()
-                    messagebox.showinfo("Success", f"Successfully created table '{table_name}'.")
-                    combo['values'] = [table_name] + list(combo['values'])
-                    combo.set(table_name)
-                    create_window.destroy()
-                    get_database_structure()
-                except sqlite3.Error as e:
-                    messagebox.showerror("Error", f"Error creating table: {e}")
-        except: 
-            messagebox.showerror("Error", f"Error creating table: Invalid or Insufficient data.")  
-
-            
-
-    
     tree.pack(anchor='w', fill='x')
-    
+
     Button(create_window, text="Add Row", command=add_row).pack(side='left', padx=5, pady=5, anchor='n')
     Button(create_window, text="Remove Row", command=remove_row).pack(side='left', padx=5, pady=5, anchor='n')
     Button(create_window, text="Create Table", command=execute_create_table_query).pack(side='left', padx=5, pady=5, anchor='n')
+
+
+def remove_table(table_name):
+    query = f"DROP TABLE {table_name}"
+    kursor.execute(query)
+    sqlite.commit()
+    get_database_structure()
+    
+def remove_column(table_name, column_name):
+    query = f"ALTER TABLE {table_name} DROP COLUMN {column_name}"    
+    kursor.execute(query)
+    sqlite.commit()
+    get_database_structure()
+
 
 def get_database_structure():
     global sqlite, kursor, label_db_struct
@@ -565,7 +547,7 @@ def get_database_structure():
     def right_click(event):
         selected_item = tree.identify("item", event.x, event.y)
         selected_tags = tree.item(selected_item, "tags")
-
+        print(selected_item, selected_tags)
         if "table_node" in selected_tags:
             tree.selection_set(selected_item)
             menu = tkinter.Menu(m, tearoff=0)
@@ -575,7 +557,15 @@ def get_database_structure():
             tree.selection_set(selected_item)
             table_name = tree.item(selected_item, "text")
             menu = tkinter.Menu(m, tearoff=0)
+            menu.add_command(label="Remove Table" ,command=lambda: remove_table(table_name))
             menu.add_command(label="Add Column", command=lambda: create_column(table_name))
+            menu.post(event.x_root, event.y_root)
+        elif "column" in selected_tags:
+            tree.selection_set(selected_item)
+            table_name = tree.item(tree.parent(selected_item), "text")
+            column_name = tree.item(selected_item, "text")
+            menu = tkinter.Menu(m, tearoff=0)
+            menu.add_command(label="Remove Column" ,command=lambda: remove_column(table_name, column_name))
             menu.post(event.x_root, event.y_root)
 
     tree.bind("<Button-3>", right_click)
