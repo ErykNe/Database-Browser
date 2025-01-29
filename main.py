@@ -1051,6 +1051,7 @@ def execute_query():
             return
         try:
             if "blob(" in query.lower():
+                    new_query = ""
                     start = query.lower().find("blob(") + 5
                     end = query.lower().find(")", start)
                     if start > 0 and end > 0:
@@ -1059,7 +1060,7 @@ def execute_query():
                             with open(image_path, "rb") as file:
                                 blob_data = file.read()
 
-                            query = query[:start - 5] + f"X'{blob_data.hex()}'" + query[end + 1:]
+                            new_query = query[:start - 5] + f"X'{blob_data.hex()}'" + query[end + 1:]
 
                         else:
                             messagebox.showerror("Error", f"Image file not found: {image_path}")
@@ -1068,8 +1069,9 @@ def execute_query():
                         messagebox.showerror("Error", "Invalid BLOB function or image path in query.")
                         return    
                     
-            kursor.execute(query)
-            
+                    kursor.execute(new_query)
+            else:    
+                kursor.execute(query)
             # checking if its a select query to create treeview displaying the output 
             if query.lower().startswith("select"):
                 result = kursor.fetchall()
