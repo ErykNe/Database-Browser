@@ -1,12 +1,6 @@
 # TODO 
 
-Maciek
-rozwijamy baze danych:
-* Custom function sql
-* Skroc kod python
-
-Eryk
-rozwoj aplikacji:
-* Zrobic opcje modify table db_struct
-* Dodac import i export XML
-  
+- naprawić problem: wykrywa wartości tylko do 10 bo potem nie skonwertuje z szesnastkowego
+- potem dodać usuwanie wierszy z tabeli pod prawym przyciskiem myszy
+- dodać wstawianie danych pod podwójnym lewym przyciskiem myszy za pomocą text entry
+- zobaczyć o co chodzi z csv, jeżeli jest problem to go naprawić a potem wzmocnić jej kompatybilność
