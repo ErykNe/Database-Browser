@@ -1,2 +1,2 @@
-TODO:
-- poprawić worda
+How to run ( in cmd )
+* py main.py
