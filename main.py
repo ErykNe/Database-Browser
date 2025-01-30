@@ -308,6 +308,12 @@ def create_column(table_name):
             sqlite.commit()
             get_database_structure()
             messagebox.showinfo("Success", f"Column '{column_name}' added to table '{table_name}'.")
+            create_column_window.destroy()
+            combo.set("Select table")
+            children = label_treedata.winfo_children()
+            if len(children) > 2:
+                children[2].destroy()
+                children[3].destroy()
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to add column: {e}")
@@ -410,8 +416,6 @@ def create_table():
                 widget.destroy()
 
     def execute_create_table_query():
-        print(widget_refs)
-        print(variables_refs)
         query = f"CREATE TABLE {delimiter_entry.get()} ("
 
         for variables in variables_refs:
@@ -428,13 +432,11 @@ def create_table():
 
         query = query.rstrip(", ") + ");"
 
-        print(query)
         try:
             kursor.execute(query)
             sqlite.commit()
             messagebox.showinfo("Success", f"Successfully created table '{delimiter_entry.get()}'.")
-            combo['values'] = [delimiter_entry.get()] + list(combo['values'])
-            combo.set(delimiter_entry.get())
+            combo['values'] = list(combo['values'] + [delimiter_entry.get()])
             create_window.destroy()
             get_database_structure()
         except sqlite3.Error as e:
@@ -446,6 +448,7 @@ def create_table():
     Button(create_window, text="Remove Row", command=remove_row).pack(side='left', padx=5, pady=5, anchor='n')
     Button(create_window, text="Create Table", command=execute_create_table_query).pack(side='left', padx=5, pady=5,
                                                                                         anchor='n')
+
 def insert_into_table():
         selected_table = combo.get()
         if not selected_table or selected_table == "Select table":
@@ -461,10 +464,9 @@ def insert_into_table():
 
         entries = {}
         columns_per_row = 3  
-        a = 0
         for i, column in enumerate(columns):
             col_name = column[1]
-            row_pos = a + (i // columns_per_row)
+            row_pos = i // columns_per_row
             col_pos = (i % columns_per_row) * 2
             Label(insert_window, text=col_name).grid(column=col_pos, row=row_pos, padx=5, pady=5)
             entry = Entry(insert_window)
@@ -486,20 +488,43 @@ def insert_into_table():
             except sqlite3.Error as e:
                 messagebox.showerror("Error", f"Failed to insert record: {e}")
 
-        Button(insert_window, text="Insert", command=insert_record, width=7).grid(column=0, row=3)
+        Button(insert_window, text="Insert", command=insert_record, width=7).grid(column=0, row=i+1// columns_per_row)
 
 def remove_table(table_name):
-    query = f"DROP TABLE {table_name}"
-    kursor.execute(query)
-    sqlite.commit()
-    get_database_structure()
+    confirm = messagebox.askyesno("Confirm Deletion", f"Are you sure you want to delete the table '{table_name}'?")
+    if confirm:
+        try:
+            query = f"DROP TABLE {table_name}"
+            kursor.execute(query)
+            sqlite.commit()
+            get_database_structure() 
+            result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = [str(table[0]) for table in result.fetchall()]
+            combo.set("Select table")
+            combo.config(values=tables)
+            children = label_treedata.winfo_children()
+            if len(children) > 2:
+                children[2].destroy()
+                children[3].destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error deleting table: {e}")
 
 
 def remove_column(table_name, column_name):
-    query = f"ALTER TABLE {table_name} DROP COLUMN {column_name}"
-    kursor.execute(query)
-    sqlite.commit()
-    get_database_structure()
+    confirm = messagebox.askyesno("Confirm Deletion", f"Are you sure you want to delete the column '{column_name}' from table '{table_name}'?")
+    if confirm:
+        try:
+            query = f"ALTER TABLE {table_name} DROP COLUMN {column_name}"
+            kursor.execute(query)
+            sqlite.commit()
+            get_database_structure()  
+            result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = [str(table[0]) for table in result.fetchall()]
+
+            combo.set("Select table")
+            combo.config(values=tables)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error deleting column: {e}")
 
 
 def get_database_structure():
@@ -590,7 +615,6 @@ def get_database_structure():
     def right_click(event):
         selected_item = tree.identify("item", event.x, event.y)
         selected_tags = tree.item(selected_item, "tags")
-        print(selected_item, selected_tags)
         if "table_node" in selected_tags:
             tree.selection_set(selected_item)
             menu = tkinter.Menu(m, tearoff=0)
@@ -691,17 +715,114 @@ def switch_tables(event):
 
         if item_id and column_id:
             # get the column index and row index
-            col_index = int(column_id[1:]) - 1
-            row_index = int(item_id[1:]) - 1
+            col_index = int(column_id.lstrip("#")) - 1
+            row_index = list(tree.get_children()).index(item_id)
+        
             if row_index < 0 or row_index >= len(result):
                 return
 
                 # get the data from the clicked row and column
             row_values = result[row_index]
             value = row_values[col_index]
-            print(value)
             if column_types[col_index] == "BLOB":  # if it was blob then download it
                 download_blob(value)
+
+    def on_cell_double_click(event): 
+        tree = event.widget
+        item_id = tree.identify_row(event.y)
+        column_id = tree.identify_column(event.x)
+
+        if item_id and column_id.startswith("#"):
+            col_index = int(column_id.lstrip("#")) - 1
+            row_index = list(tree.get_children()).index(item_id)
+
+            if row_index < 0 or row_index >= len(result):
+                return
+
+            row_values = result[row_index]
+            value = row_values[col_index]
+            
+            primary_key_column = None
+            primary_key_value = None
+            for i, column in enumerate(columns):
+                if column_types[i] == "INTEGER" and str(kursor.execute(f"PRAGMA table_info({selection})").fetchall()[i][5] == "1"):
+                    primary_key_column = column
+                    primary_key_value = row_values[i]
+                    break
+            
+            if not primary_key_column:
+                messagebox.showerror("Error", "No primary key found for this table.")
+                return
+
+            bbox = tree.bbox(item_id, column_id)
+            if not bbox:
+                return
+
+            x, y, width, height = bbox
+            
+            entry = Entry(tree)
+            entry.place(x=x, y=y + height // 2, width=width, anchor='w')
+
+            entry.insert(0, tree.item(item_id, "values")[col_index] if item_id else "")
+
+            def save_value(event):
+                new_value = entry.get()
+                try:
+                    query = f"UPDATE {selection} SET {columns[col_index]} = {("'" + str(new_value) + "'") if column_types[col_index] != 'INTEGER' else int(new_value)} WHERE {primary_key_column} = {("'" + str(primary_key_value) + "'") if column_types[i] != 'INTEGER' else int(primary_key_value)}"
+                    kursor.execute(query)
+                    sqlite.commit()
+                    tree.set(item_id, columns[col_index], new_value)
+                except Exception as e:
+                    messagebox.showerror("Error", f"Error updating database: {e}")
+                finally:
+                    entry.destroy()
+                    combo.set(selection)  
+                    combo.event_generate("<<ComboboxSelected>>") 
+                    return
+
+            def close_entry(event=None):
+                entry.destroy()
+
+            entry.bind("<Return>", save_value)
+            entry.bind("<FocusOut>", close_entry)
+            entry.focus_set()
+
+    
+    def on_right_click(event):
+        tree = event.widget
+        item_id = tree.identify_row(event.y)
+        column_id = tree.identify_column(event.x)
+        if item_id and column_id.startswith("#"):
+            col_index = int(column_id.lstrip("#")) - 1
+            row_index = list(tree.get_children()).index(item_id)
+
+            if row_index < 0 or row_index >= len(result):
+                return
+
+            row_values = result[row_index]
+            value = row_values[col_index]
+            
+            def remove_row():
+                confirm = messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete this row?")
+                if confirm:
+                    try:
+                        query = f"DELETE FROM {selection} WHERE {columns[col_index]} = {("'" + str(value) + "'") if column_types[col_index] != 'INTEGER' else int(value)}"
+                        kursor.execute(query)
+                        sqlite.commit()
+                        tree.delete(item_id)
+                        combo.set(selection)  
+                        combo.event_generate("<<ComboboxSelected>>") 
+                        return
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Error deleting row: {e}")
+                    
+            selected_item = tree.identify("item", event.x, event.y)
+            selected_tags = tree.item(selected_item, "tags")
+            tree.selection_set(selected_item)
+            menu = tkinter.Menu(m, tearoff=0)
+            menu.add_command(label="Remove row", command=remove_row)
+            menu.post(event.x_root, event.y_root)
+                
 
     for row in result:
         values = []
@@ -717,6 +838,8 @@ def switch_tables(event):
 
     # bind the click event for handling blob files
     tree.bind("<Button-1>", on_cell_click)
+    tree.bind("<Double-1>", on_cell_double_click)
+    tree.bind("<Button-3>", on_right_click)
 
     insert_button = Button(label_treedata, text="+", command=insert_into_table)
     insert_button.pack(side='top', anchor='w')
@@ -922,6 +1045,7 @@ def import_db(format):
             children = label_treedata.winfo_children()
             if len(children) > 2:
                 children[2].destroy()
+                children[3].destroy()
 
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error connecting to database: {e}")
@@ -1077,8 +1201,9 @@ def import_table_from_csv():
                     sqlite.commit()
                     messagebox.showinfo("Success", f"Data imported into table '{table_name}'.")
 
-                    combo['values'] = [table_name] + list(combo['values'])
-                    combo.set(table_name)
+                    result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                    tables = [str(table[0]) for table in result.fetchall()]
+                    combo.config(values=tables)
 
                     get_database_structure()
 

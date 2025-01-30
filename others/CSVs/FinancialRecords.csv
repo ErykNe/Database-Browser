@@ -1,0 +1,6 @@
+RecordID,RecordDate,RecordType,Description,Amount,RelatedID,RelatedType
+1,2025-01-27 09:44:03,Revenue,Payment received for Order 1,19.98,1,Order
+2,2025-01-27 09:44:03,Revenue,Payment received for Order 2,29.98,2,Order
+3,2025-01-27 09:44:03,Revenue,Payment received for Order 3,12.98,3,Order
+4,2025-01-27 09:44:03,Revenue,Payment received for Order 4,9.98,4,Order
+5,2025-01-27 09:44:03,Revenue,Payment received for Order 5,44.97,5,Order

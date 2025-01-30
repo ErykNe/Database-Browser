@@ -1,6 +1,6 @@
-IngredientID,Name,Unit,SupplierID,PricePerUnit,StockQuantity
-1,Tomatoes,kg,1,2.5,100
-2,Beef,kg,3,15,50
-3,Salmon,kg,4,20,30
-4,Flour,kg,5,1.2,200
-5,Cheese,kg,1,5,75
+IngredientID,Name,Unit,SupplierID,StockQuantity
+1,Tomatoes,kg,1,100
+2,Beef,kg,3,50
+3,Salomon,kg,4,30
+4,Flour,kg,5,200
+5,Cheese,kg,2,75

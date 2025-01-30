@@ -1,6 +1,6 @@
-StaffID,FirstName,LastName,Role,Email,PhoneNumber,Salary,HireDate
-1,Emily,White,Manager,emily.white@example.com,3216549870,55000,2022-01-15
-2,Michael,Green,Chef,michael.green@example.com,1597534862,45000,2022-03-01
-3,Sarah,Black,Waiter,sarah.black@example.com,7531598462,30000,2023-05-20
-4,David,Wilson,Bartender,david.wilson@example.com,9513574862,32000,2021-11-10
-5,Laura,Taylor,Host,laura.taylor@example.com,1594867532,28000,2023-07-05
+StaffID,FirstName,LastName,Role,Email,PhoneNumber,Salary,HireDate,AddressID
+1,Emily,White,Manager,emily.white@example.com,3216549870,55000,2022-01-15,6
+2,Michael,Green,Chef,michael.green@example.com,1597534862,45000,2022-03-01,7
+3,Thomas,Black,Waiter,sarah.black@example.com,7531598462,30000,2023-05-20,8
+4,David,Wilson,Bartender,david.wilson@example.com,9513574862,25000,2021-11-10,9
+5,Laura,Taylor,Host,laura.taylor@example.com,1594867532,20000,2023-07-05,10

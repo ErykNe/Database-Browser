@@ -1,6 +1,6 @@
-SupplierID,Name,ContactName,ContactEmail,PhoneNumber,Address
-1,Fresh Produce Co.,Tom Rogers,tom.rogers@example.com,1231231234,"123 Farm Lane, Springfield"
-2,Beverage Distributors,Nancy Miles,nancy.miles@example.com,2342342345,"456 Drink St, Hometown"
-3,Meat Suppliers Inc.,Gary Cook,gary.cook@example.com,3453453456,"789 Meat Rd, Cityville"
-4,Seafood Delights,Diane Fisher,diane.fisher@example.com,4564564567,"101 Ocean Ave, Seaside"
-5,Bakery Goods Co.,Paul Baker,paul.baker@example.com,5675675678,"202 Bread Blvd, Crustown"
+SupplierID,Name,ContactName,ContactEmail,PhoneNumber,AddressID
+1,Fresh Produce Co.,Tom Rogers,tom.rogers@example.com,1231231234,1
+2,Beverage Distributors,Nancy Miles,nancy.miles@example.com,2342342345,2
+3,Meat Suppliers Inc.,Gary Cook,gary.cook@example.com,3453453456,3
+4,Seafood Delights,Diane Fisher,diane.fisher@example.com,4564564567,4
+5,Bakery Goods Co.,Paul Baker,paul.baker@example.com,5675675678,5
