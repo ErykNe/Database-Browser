@@ -1,2 +1,2 @@
-How to run ( in cmd ) </br>
+# How to run
 ``` py main.py ```
