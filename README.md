@@ -1,2 +1,2 @@
 # How to run
-``` py main.py ```
+* ``` py main.py ```
