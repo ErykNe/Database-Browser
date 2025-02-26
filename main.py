@@ -2,20 +2,19 @@ import base64
 import csv
 import os
 import tkinter
-from tkinter import filedialog, Menu
+from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import *
 from tkinter import ttk
 import sqlite3
-from tkinter import simpledialog
 import xml.etree.ElementTree as et
 
-sqlite = None
+db_connection = None
 kursor = None
 
 
 def export_db():
-    if not sqlite:
+    if not db_connection:
         messagebox.showerror("Error", "No connection identified")
         return
 
@@ -24,12 +23,13 @@ def export_db():
     export_window.geometry("650x270")
     export_window.resizable(False, False)
 
+    # File Details Frame
     label_frame = LabelFrame(export_window, text="File Details: ")
     label_frame.pack(fill='x', padx=10, pady=10)
 
     file_name_label = Label(label_frame, text="File name:")
     file_name_label.pack(side='left', padx=10, pady=10, anchor='n')
-    file_name_var = StringVar(value="name")
+    file_name_var = StringVar(value="database")
     name_entry = Entry(label_frame, textvariable=file_name_var)
     name_entry.pack(side='left', padx=10, pady=10, anchor='n')
 
@@ -76,7 +76,7 @@ def export_db():
 
     def export_db_to_db_file(file_name, selected_path):
         # ensuring if the connection is valid
-        if not sqlite or not kursor:
+        if not kursor:
             messagebox.showerror("Error", "Database connection is not established.")
             return
 
@@ -121,7 +121,7 @@ def export_db():
 
     def export_db_to_sql_file(file_name, selected_path):
         # ensuring if the connection is valid
-        if not sqlite or not kursor:
+        if not kursor:
             messagebox.showerror("Error", "Database connection is not established.")
             return
 
@@ -130,14 +130,14 @@ def export_db():
         try:
             # writing the .sql file using built-in .dump method
             with open(sql_file_path, 'w') as sql_file:
-                for line in sqlite.iterdump():
+                for line in db_connection.iterdump():
                     sql_file.write(f"{line}\n")
 
         except Exception as e:  # handling errors
             messagebox.showerror("Error", f"Failed to export to SQL file: {str(e)}")
 
     def export_db_to_xml_file(file_name, selected_path):
-        if not sqlite or not kursor:
+        if not kursor:
             messagebox.showerror("Error", "Database connection is not established.")
             return
         xml_file_path = os.path.join(selected_path, f"{file_name}.xml")
@@ -305,7 +305,7 @@ def create_column(table_name):
                 query += f" DEFAULT {default_value}"
 
             kursor.execute(query)
-            sqlite.commit()
+            db_connection.commit()
             get_database_structure()
             messagebox.showinfo("Success", f"Column '{column_name}' added to table '{table_name}'.")
             create_column_window.destroy()
@@ -434,7 +434,7 @@ def create_table():
 
         try:
             kursor.execute(query)
-            sqlite.commit()
+            db_connection.commit()
             messagebox.showinfo("Success", f"Successfully created table '{delimiter_entry.get()}'.")
             combo['values'] = list(combo['values'] + [delimiter_entry.get()])
             create_window.destroy()
@@ -481,7 +481,7 @@ def insert_into_table():
             query = f"INSERT INTO {selected_table} ({columns_str}) VALUES ({placeholders})"
             try:
                 kursor.execute(query, list(values.values()))
-                sqlite.commit()
+                db_connection.commit()
                 messagebox.showinfo("Success", "Record inserted successfully.")
                 insert_window.destroy()
                 switch_tables(None)
@@ -496,7 +496,7 @@ def remove_table(table_name):
         try:
             query = f"DROP TABLE {table_name}"
             kursor.execute(query)
-            sqlite.commit()
+            db_connection.commit()
             get_database_structure() 
             result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [str(table[0]) for table in result.fetchall()]
@@ -516,7 +516,7 @@ def remove_column(table_name, column_name):
         try:
             query = f"ALTER TABLE {table_name} DROP COLUMN {column_name}"
             kursor.execute(query)
-            sqlite.commit()
+            db_connection.commit()
             get_database_structure()  
             result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [str(table[0]) for table in result.fetchall()]
@@ -528,7 +528,7 @@ def remove_column(table_name, column_name):
 
 
 def get_database_structure():
-    global sqlite, kursor, label_db_struct
+    global db_connection, kursor, label_db_struct
 
     # clear any existing child widgets
     children = label_db_struct.winfo_children()
@@ -553,7 +553,7 @@ def get_database_structure():
 
     query_table_names = "SELECT name, type, sql FROM sqlite_master WHERE type='table'"
     tables = kursor.execute(query_table_names).fetchall()
-    sqlite.commit()
+    db_connection.commit()
 
     for table in tables:
         name = str(table[0])
@@ -565,7 +565,7 @@ def get_database_structure():
         table_item = tree.insert(table_node, "end", text=name, open=False, values=("", schema), tags=("table",))
         table_info = f"PRAGMA table_info({name});"
         table_struct = kursor.execute(table_info).fetchall()
-        sqlite.commit()
+        db_connection.commit()
         for struct in table_struct:
             result = f'"{struct[1]}" {struct[2]} {"NOT NULL " if struct[3] == 1 else ""} {"PRIMARY KEY" if struct[5] == 1 else ""}'
             column_item = tree.insert(table_item, "end", text=str(struct[1]), values=(str(struct[2]), result),
@@ -578,7 +578,7 @@ def get_database_structure():
 
     query_view_names = "SELECT name, type, sql FROM sqlite_master WHERE type='view'"
     views = kursor.execute(query_view_names).fetchall()
-    sqlite.commit()
+    db_connection.commit()
 
     for view in views:
         name = str(view[0])
@@ -593,7 +593,7 @@ def get_database_structure():
 
     query_triggers_names = "SELECT name, type, sql FROM sqlite_master WHERE type='trigger'"
     triggers = kursor.execute(query_triggers_names).fetchall()
-    sqlite.commit()
+    db_connection.commit()
 
     for trigger in triggers:
         name = str(trigger[0])
@@ -671,7 +671,7 @@ def download_blob(blob_data, file_extension=None):
 
 
 def switch_tables(event):
-    global combo, sqlite, kursor, label_browse_data, label_treedata, h1, v1
+    global combo, db_connection, kursor, label_browse_data, label_treedata, h1, v1
     selection = combo.get()
     query = f"SELECT * FROM {selection}"
 
@@ -770,7 +770,7 @@ def switch_tables(event):
                 try:
                     query = f"UPDATE {selection} SET {columns[col_index]} = {("'" + str(new_value) + "'") if column_types[col_index] != 'INTEGER' else int(new_value)} WHERE {primary_key_column} = {("'" + str(primary_key_value) + "'") if column_types[i] != 'INTEGER' else int(primary_key_value)}"
                     kursor.execute(query)
-                    sqlite.commit()
+                    db_connection.commit()
                     tree.set(item_id, columns[col_index], new_value)
                 except Exception as e:
                     messagebox.showerror("Error", f"Error updating database: {e}")
@@ -808,7 +808,7 @@ def switch_tables(event):
                     try:
                         query = f"DELETE FROM {selection} WHERE {columns[col_index]} = {("'" + str(value) + "'") if column_types[col_index] != 'INTEGER' else int(value)}"
                         kursor.execute(query)
-                        sqlite.commit()
+                        db_connection.commit()
                         tree.delete(item_id)
                         combo.set(selection)  
                         combo.event_generate("<<ComboboxSelected>>") 
@@ -874,32 +874,32 @@ def switch_view(view):
 
 
 def create_db_from_sql(sql_file):
-    global sqlite, kursor
+    global db_connection, kursor
     try:
         if os.path.exists("temp.db"):
             os.remove("temp.db")
 
-        sqlite = sqlite3.connect("temp.db")
-        kursor = sqlite.cursor()
+        db_connection = sqlite3.connect("temp.db")
+        kursor = db_connection.cursor()
 
         with open(sql_file, 'r') as f:
             sql = f.read()
 
         kursor.executescript(sql)
-        sqlite.commit()
+        db_connection.commit()
 
     except sqlite3.Error as e:
         messagebox.showerror("Error", "Error creating database: {e}")
 
 
 def create_db_from_xml(xml_file):
-    global sqlite, kursor
+    global db_connection, kursor
     try:
         if os.path.exists("temp.db"):
             os.remove("temp.db")
 
-        sqlite = sqlite3.connect("temp.db")
-        kursor = sqlite.cursor()
+        db_connection = sqlite3.connect("temp.db")
+        kursor = db_connection.cursor()
 
         kursor.execute("PRAGMA foreign_keys = ON;")
 
@@ -978,7 +978,7 @@ def create_db_from_xml(xml_file):
             trigger_definition = trigger.find("schema").text
             kursor.execute(trigger_definition)
 
-        sqlite.commit()
+        db_connection.commit()
 
     except sqlite3.Error as e:
         messagebox.showerror("Error", f"SQLite Error: {e}")
@@ -989,7 +989,7 @@ def create_db_from_xml(xml_file):
 
 
 def import_db(format):
-    global sqlite, kursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata, result_label
+    global db_connection, kursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata, result_label
 
     match format:
         case ".db":
@@ -1009,18 +1009,18 @@ def import_db(format):
 
     if db_path:
         try:
-            if sqlite:
-                sqlite.close()
+            if db_connection:
+                db_connection.close()
 
             match format:
                 case ".db":
-                    sqlite = sqlite3.connect(db_path, check_same_thread=False, uri=True)
+                    db_connection = sqlite3.connect(db_path, check_same_thread=False, uri=True)
                 case ".sql":
                     create_db_from_sql(db_path)
                 case ".xml":
                     create_db_from_xml(db_path)
 
-            kursor = sqlite.cursor()
+            kursor = db_connection.cursor()
             result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [str(table[0]) for table in result.fetchall()]
 
@@ -1053,9 +1053,9 @@ def import_db(format):
 
 
 def export_table_to_csv():
-    global sqlite, kursor, combo, m
+    global db_connection, kursor, combo, m
 
-    if not sqlite:
+    if not db_connection:
         messagebox.showerror("Error", "No database connection found.")
         return
 
@@ -1146,8 +1146,8 @@ def export_table_to_csv():
 
 
 def import_table_from_csv():
-    global sqlite, kursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata
-    if not sqlite:
+    global db_connection, kursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata
+    if not db_connection:
         messagebox.showerror("Error", "No database connection found.")
         return
     db_path = filedialog.askopenfilename(
@@ -1198,7 +1198,7 @@ def import_table_from_csv():
                         placeholders = ', '.join(['?'] * len(row))
                         kursor.execute(f'INSERT INTO "{table_name}" VALUES ({placeholders});', row)
 
-                    sqlite.commit()
+                    db_connection.commit()
                     messagebox.showinfo("Success", f"Data imported into table '{table_name}'.")
 
                     result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -1217,7 +1217,7 @@ def import_table_from_csv():
 
 def execute_query():
     global h3, v3
-    if sqlite:
+    if db_connection:
         query = sql_input_textbox.get(1.0, "end-1c").strip()
         if not query or query == "":
             messagebox.showerror("Error", "No query typed in")
@@ -1321,7 +1321,7 @@ def execute_query():
             else:  # for other queries
                 for child in result_label.winfo_children():
                     child.destroy()
-                sqlite.commit()
+                db_connection.commit()
                 get_database_structure()
                 sql_output_textbox.config(state='normal')
                 sql_output_textbox.delete(1.0, "end")
