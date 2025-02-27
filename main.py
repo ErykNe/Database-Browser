@@ -8,10 +8,10 @@ from tkinter import *
 from tkinter import ttk
 import sqlite3
 import xml.etree.ElementTree as et
-from exports import export_db
+from exports import export_db, export_table_to_csv
 
 db_connection = None
-kursor = None
+cursor = None
 
 
 def create_column(table_name):
@@ -52,7 +52,7 @@ def create_column(table_name):
             if default_value:
                 query += f" DEFAULT {default_value}"
 
-            kursor.execute(query)
+            cursor.execute(query)
             db_connection.commit()
             get_database_structure()
             messagebox.showinfo("Success", f"Column '{column_name}' added to table '{table_name}'.")
@@ -181,7 +181,7 @@ def create_table():
         query = query.rstrip(", ") + ");"
 
         try:
-            kursor.execute(query)
+            cursor.execute(query)
             db_connection.commit()
             messagebox.showinfo("Success", f"Successfully created table '{delimiter_entry.get()}'.")
             combo['values'] = list(combo['values'] + [delimiter_entry.get()])
@@ -208,8 +208,8 @@ def insert_into_table():
     insert_window.title(f"Insert into {selected_table}")
     insert_window.resizable(False, False)
 
-    kursor.execute(f"PRAGMA table_info({selected_table})")
-    columns = kursor.fetchall()
+    cursor.execute(f"PRAGMA table_info({selected_table})")
+    columns = cursor.fetchall()
 
     entries = {}
     columns_per_row = 3
@@ -229,7 +229,7 @@ def insert_into_table():
         placeholders = ', '.join(['?' for _ in values])
         query = f"INSERT INTO {selected_table} ({columns_str}) VALUES ({placeholders})"
         try:
-            kursor.execute(query, list(values.values()))
+            cursor.execute(query, list(values.values()))
             db_connection.commit()
             messagebox.showinfo("Success", "Record inserted successfully.")
             insert_window.destroy()
@@ -245,10 +245,10 @@ def remove_table(table_name):
     if confirm:
         try:
             query = f"DROP TABLE {table_name}"
-            kursor.execute(query)
+            cursor.execute(query)
             db_connection.commit()
             get_database_structure()
-            result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            result = cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [str(table[0]) for table in result.fetchall()]
             combo.set("Select table")
             combo.config(values=tables)
@@ -266,10 +266,10 @@ def remove_column(table_name, column_name):
     if confirm:
         try:
             query = f"ALTER TABLE {table_name} DROP COLUMN {column_name}"
-            kursor.execute(query)
+            cursor.execute(query)
             db_connection.commit()
             get_database_structure()
-            result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            result = cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [str(table[0]) for table in result.fetchall()]
 
             combo.set("Select table")
@@ -279,7 +279,7 @@ def remove_column(table_name, column_name):
 
 
 def get_database_structure():
-    global db_connection, kursor, label_db_struct
+    global db_connection, cursor, label_db_struct
 
     # clear any existing child widgets
     children = label_db_struct.winfo_children()
@@ -295,7 +295,7 @@ def get_database_structure():
     tree.heading("Type", text="Type", anchor='w')
     tree.heading("Schema", text="Schema", anchor='w')
 
-    longest_schema_length = 0  # for column lengths adjustement
+    longest_schema_length = 0  # for column lengths adjustment
 
     # configure underline tag for primary keys
     tree.tag_configure("underline", font=("", 9, "underline"))
@@ -303,7 +303,7 @@ def get_database_structure():
     table_node = tree.insert("", "end", text="Tables", open=True, tags=("table_node",))
 
     query_table_names = "SELECT name, type, sql FROM sqlite_master WHERE type='table'"
-    tables = kursor.execute(query_table_names).fetchall()
+    tables = cursor.execute(query_table_names).fetchall()
     db_connection.commit()
 
     for table in tables:
@@ -315,7 +315,7 @@ def get_database_structure():
 
         table_item = tree.insert(table_node, "end", text=name, open=False, values=("", schema), tags=("table",))
         table_info = f"PRAGMA table_info({name});"
-        table_struct = kursor.execute(table_info).fetchall()
+        table_struct = cursor.execute(table_info).fetchall()
         db_connection.commit()
         for struct in table_struct:
             result = f'"{struct[1]}" {struct[2]} {"NOT NULL " if struct[3] == 1 else ""} {"PRIMARY KEY" if struct[5] == 1 else ""}'
@@ -328,7 +328,7 @@ def get_database_structure():
     view_node = tree.insert("", "end", text="Views", open=True, tags=("view_node",))
 
     query_view_names = "SELECT name, type, sql FROM sqlite_master WHERE type='view'"
-    views = kursor.execute(query_view_names).fetchall()
+    views = cursor.execute(query_view_names).fetchall()
     db_connection.commit()
 
     for view in views:
@@ -343,7 +343,7 @@ def get_database_structure():
     trigger_node = tree.insert("", "end", text="Triggers", open=True, tags=("trigger_node",))
 
     query_triggers_names = "SELECT name, type, sql FROM sqlite_master WHERE type='trigger'"
-    triggers = kursor.execute(query_triggers_names).fetchall()
+    triggers = cursor.execute(query_triggers_names).fetchall()
     db_connection.commit()
 
     for trigger in triggers:
@@ -422,12 +422,12 @@ def download_blob(blob_data, file_extension=None):
 
 
 def switch_tables(event):
-    global combo, db_connection, kursor, label_browse_data, label_treedata, h1, v1
+    global combo, db_connection, cursor, label_browse_data, label_treedata, h1, v1
     selection = combo.get()
     query = f"SELECT * FROM {selection}"
 
-    result = kursor.execute(query).fetchall()
-    columns = [description[1] for description in kursor.execute(f"PRAGMA table_info({selection})").fetchall()]
+    result = cursor.execute(query).fetchall()
+    columns = [description[1] for description in cursor.execute(f"PRAGMA table_info({selection})").fetchall()]
 
     children = label_treedata.winfo_children()
     if len(children) > 2:
@@ -444,7 +444,7 @@ def switch_tables(event):
 
     max_lengths = [len(col) for col in columns]
 
-    column_types = [desc[2] for desc in kursor.execute(f"PRAGMA table_info({selection})").fetchall()]
+    column_types = [desc[2] for desc in cursor.execute(f"PRAGMA table_info({selection})").fetchall()]
 
     for row in result:
         for i, value in enumerate(row):
@@ -496,7 +496,7 @@ def switch_tables(event):
             primary_key_value = None
             for i, column in enumerate(columns):
                 if column_types[i] == "INTEGER" and str(
-                        kursor.execute(f"PRAGMA table_info({selection})").fetchall()[i][5] == "1"):
+                        cursor.execute(f"PRAGMA table_info({selection})").fetchall()[i][5] == "1"):
                     primary_key_column = column
                     primary_key_value = row_values[i]
                     break
@@ -520,7 +520,7 @@ def switch_tables(event):
                 new_value = entry.get()
                 try:
                     query = f"UPDATE {selection} SET {columns[col_index]} = {("'" + str(new_value) + "'") if column_types[col_index] != 'INTEGER' else int(new_value)} WHERE {primary_key_column} = {("'" + str(primary_key_value) + "'") if column_types[i] != 'INTEGER' else int(primary_key_value)}"
-                    kursor.execute(query)
+                    cursor.execute(query)
                     db_connection.commit()
                     tree.set(item_id, columns[col_index], new_value)
                 except Exception as e:
@@ -557,7 +557,7 @@ def switch_tables(event):
                 if confirm:
                     try:
                         query = f"DELETE FROM {selection} WHERE {columns[col_index]} = {("'" + str(value) + "'") if column_types[col_index] != 'INTEGER' else int(value)}"
-                        kursor.execute(query)
+                        cursor.execute(query)
                         db_connection.commit()
                         tree.delete(item_id)
                         combo.set(selection)
@@ -624,18 +624,18 @@ def switch_view(view):
 
 
 def create_db_from_sql(sql_file):
-    global db_connection, kursor
+    global db_connection, cursor
     try:
         if os.path.exists("temp.db"):
             os.remove("temp.db")
 
         db_connection = sqlite3.connect("temp.db")
-        kursor = db_connection.cursor()
+        cursor = db_connection.cursor()
 
         with open(sql_file, 'r') as f:
             sql = f.read()
 
-        kursor.executescript(sql)
+        cursor.executescript(sql)
         db_connection.commit()
 
     except sqlite3.Error as e:
@@ -643,15 +643,15 @@ def create_db_from_sql(sql_file):
 
 
 def create_db_from_xml(xml_file):
-    global db_connection, kursor
+    global db_connection, cursor
     try:
         if os.path.exists("temp.db"):
             os.remove("temp.db")
 
         db_connection = sqlite3.connect("temp.db")
-        kursor = db_connection.cursor()
+        cursor = db_connection.cursor()
 
-        kursor.execute("PRAGMA foreign_keys = ON;")
+        cursor.execute("PRAGMA foreign_keys = ON;")
 
         with open(xml_file, "r", encoding="utf-8") as f:
             content = f.read()
@@ -694,7 +694,7 @@ def create_db_from_xml(xml_file):
                 columns += relations[table_name]
 
             create_table_sql = f"CREATE TABLE {table_name} ({', '.join(columns)});"
-            kursor.execute(create_table_sql)
+            cursor.execute(create_table_sql)
 
             # insert table records
             data = table.find("data")
@@ -718,15 +718,15 @@ def create_db_from_xml(xml_file):
 
                             # insert the decoded value into the database
                     insert_sql = f"INSERT INTO {table_name} ({', '.join(col_names)}) VALUES ({', '.join(['?' for _ in col_names])});"
-                    kursor.execute(insert_sql, tuple(col_values))
+                    cursor.execute(insert_sql, tuple(col_values))
 
         for view in root.findall("view"):
             view_definition = view.find("schema").text
-            kursor.execute(view_definition)
+            cursor.execute(view_definition)
 
         for trigger in root.findall("trigger"):
             trigger_definition = trigger.find("schema").text
-            kursor.execute(trigger_definition)
+            cursor.execute(trigger_definition)
 
         db_connection.commit()
 
@@ -739,7 +739,7 @@ def create_db_from_xml(xml_file):
 
 
 def import_db(format):
-    global db_connection, kursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata, result_label
+    global db_connection, cursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata, result_label
 
     match format:
         case ".db":
@@ -770,14 +770,14 @@ def import_db(format):
                 case ".xml":
                     create_db_from_xml(db_path)
 
-            kursor = db_connection.cursor()
-            result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            cursor = db_connection.cursor()
+            result = cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [str(table[0]) for table in result.fetchall()]
 
             combo.set("Select table")
             combo.config(values=tables)
 
-            m.title("SQLite Database Manager - " + str(db_path))  # config all neccesseary widgets
+            m.title("SQLite Database Manager - " + str(db_path))  # config all necessary widgets
             print_button.pack(side='top', pady=5, anchor='w')
             sql_input_textbox.pack(side='top', pady=5, anchor='w', fill='x')
             result_label.pack(anchor='w', fill='both')
@@ -802,101 +802,8 @@ def import_db(format):
             import_db()
 
 
-def export_table_to_csv():
-    global db_connection, kursor, combo, m
-
-    if not db_connection:
-        messagebox.showerror("Error", "No database connection found.")
-        return
-
-    kursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    tables = [row[0] for row in kursor.fetchall()]
-
-    if not tables:
-        messagebox.showerror("Error", "No tables found in the database.")
-        return
-
-    export_window = Toplevel(m)
-    export_window.title("Export Table to CSV")
-    export_window.resizable(False, False)
-
-    Label(export_window, text="Select Table: ").grid(row=0, column=0)
-    table_var = StringVar()
-    table_combo = ttk.Combobox(export_window, textvariable=table_var, values=tables, state="readonly")
-    table_combo.grid(row=0, column=1)
-
-    Label(export_window, text="Select path:").grid(row=1, column=0)
-
-    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
-
-    def selection(event):
-        if combo_var.get() == "Other...":
-            folder_path = filedialog.askdirectory(parent=export_window)
-            if folder_path:
-                combo_var.set(folder_path)
-            else:
-                combo_var.set(desktop_path)
-
-    combo_var = StringVar()
-    options = [desktop_path, "Other..."]
-    combobox = ttk.Combobox(export_window, textvariable=combo_var, values=options, state="normal")
-    combobox.grid(row=1, column=1)
-    combobox.bind("<<ComboboxSelected>>", selection)
-    combobox.set(desktop_path)
-
-    Label(export_window, text="Delimiter: ").grid(row=2, column=0)
-    delimiter_var = StringVar(value=",")
-    delimiter_entry = Entry(export_window, textvariable=delimiter_var)
-    delimiter_entry.grid(row=2, column=1)
-
-    Label(export_window, text="Quote Character: ").grid(row=3, column=0)
-    quote_char_var = StringVar(value='"')
-    quote_char_entry = Entry(export_window, textvariable=quote_char_var)
-    quote_char_entry.grid(row=3, column=1)
-
-    Label(export_window, text="Encoding: ").grid(row=4, column=0)
-    encoding_var = StringVar(value="UTF-8")
-    encoding_entry = Entry(export_window, textvariable=encoding_var)
-    encoding_entry.grid(row=4, column=1)
-
-    def export():
-        selected_table = table_var.get()
-        if not selected_table:
-            messagebox.showerror("Error", "Please select a table.")
-            return
-
-        folder_path = combo_var.get()
-        if not folder_path:
-            messagebox.showerror("Error", "Please select a folder path.")
-            return
-
-        delimiter = delimiter_var.get()
-        quote_char = quote_char_var.get()
-        encoding = encoding_var.get()
-
-        try:
-            kursor.execute(f"SELECT * FROM {selected_table};")
-            rows = kursor.fetchall()
-            columns = [desc[0] for desc in kursor.description]
-
-            csv_path = os.path.join(folder_path, f"{selected_table}.csv")
-
-            with open(csv_path, mode="w", newline="", encoding=encoding) as csv_file:
-                writer = csv.writer(csv_file, delimiter=delimiter, quotechar=quote_char, quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(columns)
-                writer.writerows(rows)
-
-            messagebox.showinfo("Success", f"Table exported successfully to {csv_path}")
-            export_window.destroy()
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to export table: {e}")
-
-    Button(export_window, text="Export", command=export).grid(row=5, column=0, columnspan=2)
-
-
 def import_table_from_csv():
-    global db_connection, kursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata
+    global db_connection, cursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata
     if not db_connection:
         messagebox.showerror("Error", "No database connection found.")
         return
@@ -937,21 +844,21 @@ def import_table_from_csv():
                     if header_var.get():
                         headers = next(reader)
                         columns = ', '.join([f'"{header}" TEXT' for header in headers])
-                        kursor.execute(f'CREATE TABLE IF NOT EXISTS "{table_name}" ({columns});')
+                        cursor.execute(f'CREATE TABLE IF NOT EXISTS "{table_name}" ({columns});')
                     else:
                         headers = [f"Column{i + 1}" for i in range(len(next(reader)))]
                         columns = ', '.join([f'"{header}" TEXT' for header in headers])
-                        kursor.execute(f'CREATE TABLE IF NOT EXISTS "{table_name}" ({columns});')
+                        cursor.execute(f'CREATE TABLE IF NOT EXISTS "{table_name}" ({columns});')
                         f.seek(0)
 
                     for row in reader:
                         placeholders = ', '.join(['?'] * len(row))
-                        kursor.execute(f'INSERT INTO "{table_name}" VALUES ({placeholders});', row)
+                        cursor.execute(f'INSERT INTO "{table_name}" VALUES ({placeholders});', row)
 
                     db_connection.commit()
                     messagebox.showinfo("Success", f"Data imported into table '{table_name}'.")
 
-                    result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                    result = cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
                     tables = [str(table[0]) for table in result.fetchall()]
                     combo.config(values=tables)
 
@@ -992,12 +899,12 @@ def execute_query():
                     messagebox.showerror("Error", "Invalid BLOB function or image path in query.")
                     return
 
-                kursor.execute(new_query)
+                cursor.execute(new_query)
             else:
-                kursor.execute(query)
-            # checking if its a select query to create treeview displaying the output 
+                cursor.execute(query)
+            # checking if it's a select query to create treeview displaying the output
             if query.lower().startswith("select"):
-                result = kursor.fetchall()
+                result = cursor.fetchall()
 
                 # clearing existing view if there is any
                 for child in result_label.winfo_children():
@@ -1009,9 +916,9 @@ def execute_query():
                     sql_output_textbox.insert("insert", f"Execution finished without errors.\n{query}\n")
                     sql_output_textbox.config(state='disabled')
 
-                    columns = [desc[0] for desc in kursor.description]
+                    columns = [desc[0] for desc in cursor.description]
                     column_types = [desc[2] for desc in
-                                    kursor.execute(f"PRAGMA table_info({query.split('FROM ')[1].split()[0]})")]
+                                    cursor.execute(f"PRAGMA table_info({query.split('FROM ')[1].split()[0]})")]
 
                     tree = ttk.Treeview(result_label, xscrollcommand=h3.set, yscrollcommand=v3.set)
                     tree["show"] = "headings"
@@ -1110,10 +1017,10 @@ menuBar.add_cascade(label="Import", menu=importmenu)
 
 exportmenu = Menu(menuBar, tearoff=0)
 
-exportmenu.add_command(label="Database", command=lambda: export_db(db_connection, kursor, m))
+exportmenu.add_command(label="Database", command=lambda: export_db(db_connection, cursor, m))
 
 export_submenu = Menu(exportmenu, tearoff=0)
-export_submenu.add_command(label="To CSV File", command=export_table_to_csv)
+export_submenu.add_command(label="To CSV File", command=lambda: export_table_to_csv(db_connection, cursor, m))
 
 exportmenu.add_cascade(label="Table", menu=export_submenu)
 
