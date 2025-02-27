@@ -8,262 +8,10 @@ from tkinter import *
 from tkinter import ttk
 import sqlite3
 import xml.etree.ElementTree as et
+from exports import export_db
 
 db_connection = None
 kursor = None
-
-
-def export_db():
-    if not db_connection:
-        messagebox.showerror("Error", "No connection identified")
-        return
-
-    export_window = Toplevel(m)
-    export_window.title("Export database")
-    export_window.geometry("650x270")
-    export_window.resizable(False, False)
-
-    # File Details Frame
-    label_frame = LabelFrame(export_window, text="File Details: ")
-    label_frame.pack(fill='x', padx=10, pady=10)
-
-    file_name_label = Label(label_frame, text="File name:")
-    file_name_label.pack(side='left', padx=10, pady=10, anchor='n')
-    file_name_var = StringVar(value="database")
-    name_entry = Entry(label_frame, textvariable=file_name_var)
-    name_entry.pack(side='left', padx=10, pady=10, anchor='n')
-
-    file_src_label = Label(label_frame, text="File path:")
-    file_src_label.pack(side='left', padx=10, pady=10, anchor='n')
-
-    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")  # set the deafult path to desktop
-
-    # handle combobox selection
-    def on_select(event):
-        if var.get() == "Other...":
-            folder_path = filedialog.askdirectory(parent=export_window)  # Open folder dialog to select a directory
-            if folder_path:
-                var.set(folder_path)
-            else:
-                var.set(desktop_path)
-
-                # the combobox that asks for directory
-
-    var = StringVar()
-    options = [desktop_path, "Other..."]
-    path_combobox = ttk.Combobox(label_frame, textvariable=var, values=options, state="normal")
-    path_combobox.pack(fill='x', padx=10, pady=10, anchor='n')
-    path_combobox.bind("<<ComboboxSelected>>", on_select)
-
-    path_combobox.set(desktop_path)  # set the deafult path to desktop
-
-    checkbox_frame = LabelFrame(export_window, text="File Type:")
-    checkbox_frame.pack(fill='x', padx=10, pady=10)
-
-    # file type variables
-    db_var = BooleanVar(value=False)
-    sql_var = BooleanVar(value=False)
-    xml_var = BooleanVar(value=False)
-
-    db_checkbox = Checkbutton(checkbox_frame, text=".db", variable=db_var)
-    db_checkbox.pack(side='left', padx=10, pady=10)
-
-    sql_checkbox = Checkbutton(checkbox_frame, text=".sql", variable=sql_var)
-    sql_checkbox.pack(side='left', padx=10, pady=10)
-
-    xml_checkbox = Checkbutton(checkbox_frame, text=".xml", variable=xml_var)
-    xml_checkbox.pack(side='left', padx=10, pady=10)
-
-    def export_db_to_db_file(file_name, selected_path):
-        # ensuring if the connection is valid
-        if not kursor:
-            messagebox.showerror("Error", "Database connection is not established.")
-            return
-
-        db_file_path = os.path.join(selected_path, f"{file_name}.db")
-
-        try:
-
-            new_connection = sqlite3.connect(db_file_path)  # opening new connection to write the .db file
-            new_kursor = new_connection.cursor()
-            kursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-            tables = kursor.fetchall()
-
-            for table in tables:
-                table_name = table[0]
-                kursor.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name='{table_name}';")
-                table_query = kursor.fetchone()[0]
-                new_kursor.execute(table_query)
-                kursor.execute(f"SELECT * FROM {table_name};")
-                rows = kursor.fetchall()
-                for row in rows:
-                    values = ', '.join('?' for _ in row)
-                    insert_query = f"INSERT INTO {table_name} VALUES ({values});"
-                    new_kursor.executemany(insert_query, [row])
-
-            kursor.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
-            views = kursor.fetchall()
-            for view in views:
-                view_name, view_query = view
-                new_kursor.execute(view_query)  # creating views in the new file 
-
-            kursor.execute("SELECT name, sql FROM sqlite_master WHERE type='trigger';")
-            triggers = kursor.fetchall()
-            for trigger in triggers:
-                trigger_name, trigger_query = trigger
-                new_kursor.execute(trigger_query)  # creating triggers in the new file 
-
-            new_connection.commit()
-            new_connection.close()
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to export to DB file: {str(e)}")
-
-    def export_db_to_sql_file(file_name, selected_path):
-        # ensuring if the connection is valid
-        if not kursor:
-            messagebox.showerror("Error", "Database connection is not established.")
-            return
-
-        sql_file_path = os.path.join(selected_path, f"{file_name}.sql")
-
-        try:
-            # writing the .sql file using built-in .dump method
-            with open(sql_file_path, 'w') as sql_file:
-                for line in db_connection.iterdump():
-                    sql_file.write(f"{line}\n")
-
-        except Exception as e:  # handling errors
-            messagebox.showerror("Error", f"Failed to export to SQL file: {str(e)}")
-
-    def export_db_to_xml_file(file_name, selected_path):
-        if not kursor:
-            messagebox.showerror("Error", "Database connection is not established.")
-            return
-        xml_file_path = os.path.join(selected_path, f"{file_name}.xml")
-        try:
-            # open XML file to write data
-            with open(xml_file_path, 'w', encoding='utf-8') as xml_file:
-                xml_file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-                xml_file.write('<dataset>\n')
-
-                kursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-                tables = kursor.fetchall()
-
-                for table in tables:
-                    table_name = table[0]
-                    xml_file.write(f'  <table name="{table_name}">\n')
-
-                    kursor.execute(f"PRAGMA table_info({table_name});")
-                    columns = kursor.fetchall()
-
-                    # write table schema (datatypes)
-                    xml_file.write('    <schema>\n')
-                    for column in columns:
-                        column_name = column[1]
-                        column_type = column[2]
-                        pk = column[5]
-                        xml_file.write(
-                            f'      <column name="{column_name}" type="{column_type}" primary_key="{pk}" />\n')
-                    xml_file.write('    </schema>\n')
-
-                    # write tables
-                    kursor.execute(f"SELECT * FROM {table_name};")
-                    rows = kursor.fetchall()
-                    column_names = [column[1] for column in columns]
-                    xml_file.write('    <data>\n')
-                    for row in rows:
-                        xml_file.write('      <record>\n')
-                        for column_name, value in zip(column_names, row):
-                            # encode data
-                            if value is not None:
-                                if isinstance(value, bytes):  # check if it's a BLOB
-                                    # encode the BLOB 
-                                    encoded = base64.b64encode(value).decode('utf-8')
-                                else:
-                                    # encode the other data
-                                    encoded = base64.b64encode(str(value).encode('utf-8')).decode('utf-8')
-                                xml_file.write(f'        <{column_name}>{encoded}</{column_name}>\n')
-                            else:
-                                xml_file.write(f'        <{column_name}></{column_name}>\n')
-                        xml_file.write('      </record>\n')
-                    xml_file.write('    </data>\n')
-
-                    xml_file.write('  </table>\n')
-
-                # export views
-                kursor.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
-                views = kursor.fetchall()
-
-                for view in views:
-                    view_name, view_sql = view
-                    xml_file.write(f'  <view name="{view_name}">\n')
-                    xml_file.write(f'    <schema>{view_sql}</schema>\n')
-                    xml_file.write('  </view>\n')
-
-                # exporting triggers
-                kursor.execute("SELECT name, sql FROM sqlite_master WHERE type='trigger';")
-                triggers = kursor.fetchall()
-                for trigger in triggers:
-                    trigger_name, trigger_sql = trigger
-                    xml_file.write(f'  <trigger name="{trigger_name}">\n')
-                    xml_file.write(f'    <schema>{trigger_sql}</schema>\n')
-                    xml_file.write('  </trigger>\n')
-
-                # export relationships (foreign keys)
-                for table in tables:
-                    table_name = table[0]
-                    kursor.execute(f"PRAGMA foreign_key_list({table_name});")
-                    foreign_keys = kursor.fetchall()
-                    if foreign_keys:
-                        xml_file.write(f'  <relation table="{table_name}">\n')
-                        for fk in foreign_keys:
-                            xml_file.write(
-                                f'    <foreign_key column="{fk[3]}" references_table="{fk[2]}" references_column="{fk[4]}" />\n'
-                            )
-                        xml_file.write('  </relation>\n')
-
-                xml_file.write('</dataset>\n')
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to export to XML file: {str(e)}")
-
-    def confirm_export():
-        selected_path = var.get()
-        file_name = file_name_var.get()
-        file_types = []
-        if db_var.get():
-            file_types.append(".db")
-        if sql_var.get():
-            file_types.append(".sql")
-        if xml_var.get():
-            file_types.append(".xml")
-
-        if not os.path.isdir(selected_path):
-            messagebox.showerror("Error", "Please select a valid directory.")
-            return
-        if not file_name.strip():
-            messagebox.showerror("Error", "File name cannot be empty.")
-            return
-        if not file_types:
-            messagebox.showerror("Error", "Please select at least one file type.")
-            return
-
-        selected_types = ", ".join(file_types)
-
-        for file_type in file_types:
-            match file_type:  # exporting files depending on what the user has selected
-                case '.db':
-                    export_db_to_db_file(file_name, selected_path)
-                case '.sql':
-                    export_db_to_sql_file(file_name, selected_path)
-                case '.xml':
-                    export_db_to_xml_file(file_name, selected_path)
-        messagebox.showinfo("Success",
-                            f"Database exported to:\n{os.path.join(selected_path, file_name)}\nFile types: {selected_types}")
-
-    export_button = Button(export_window, text="Export", command=confirm_export, width=18)
-    export_button.pack(pady=20, padx=10, side='left', anchor='n')
 
 
 def create_column(table_name):
@@ -449,46 +197,48 @@ def create_table():
     Button(create_window, text="Create Table", command=execute_create_table_query).pack(side='left', padx=5, pady=5,
                                                                                         anchor='n')
 
+
 def insert_into_table():
-        selected_table = combo.get()
-        if not selected_table or selected_table == "Select table":
-            messagebox.showerror("Error", "Please select a table.")
-            return
+    selected_table = combo.get()
+    if not selected_table or selected_table == "Select table":
+        messagebox.showerror("Error", "Please select a table.")
+        return
 
-        insert_window = Toplevel(m)
-        insert_window.title(f"Insert into {selected_table}")
-        insert_window.resizable(False, False)
+    insert_window = Toplevel(m)
+    insert_window.title(f"Insert into {selected_table}")
+    insert_window.resizable(False, False)
 
-        kursor.execute(f"PRAGMA table_info({selected_table})")
-        columns = kursor.fetchall()
+    kursor.execute(f"PRAGMA table_info({selected_table})")
+    columns = kursor.fetchall()
 
-        entries = {}
-        columns_per_row = 3  
-        for i, column in enumerate(columns):
-            col_name = column[1]
-            row_pos = i // columns_per_row
-            col_pos = (i % columns_per_row) * 2
-            Label(insert_window, text=col_name).grid(column=col_pos, row=row_pos, padx=5, pady=5)
-            entry = Entry(insert_window)
-            entry.grid(column=col_pos + 1, row=row_pos, padx=5, pady=5)
-            
-            entries[col_name] = entry
+    entries = {}
+    columns_per_row = 3
+    for i, column in enumerate(columns):
+        col_name = column[1]
+        row_pos = i // columns_per_row
+        col_pos = (i % columns_per_row) * 2
+        Label(insert_window, text=col_name).grid(column=col_pos, row=row_pos, padx=5, pady=5)
+        entry = Entry(insert_window)
+        entry.grid(column=col_pos + 1, row=row_pos, padx=5, pady=5)
 
-        def insert_record():
-            values = {col: entry.get() for col, entry in entries.items()}
-            columns_str = ', '.join(values.keys())
-            placeholders = ', '.join(['?' for _ in values])
-            query = f"INSERT INTO {selected_table} ({columns_str}) VALUES ({placeholders})"
-            try:
-                kursor.execute(query, list(values.values()))
-                db_connection.commit()
-                messagebox.showinfo("Success", "Record inserted successfully.")
-                insert_window.destroy()
-                switch_tables(None)
-            except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to insert record: {e}")
+        entries[col_name] = entry
 
-        Button(insert_window, text="Insert", command=insert_record, width=7).grid(column=0, row=i+1// columns_per_row)
+    def insert_record():
+        values = {col: entry.get() for col, entry in entries.items()}
+        columns_str = ', '.join(values.keys())
+        placeholders = ', '.join(['?' for _ in values])
+        query = f"INSERT INTO {selected_table} ({columns_str}) VALUES ({placeholders})"
+        try:
+            kursor.execute(query, list(values.values()))
+            db_connection.commit()
+            messagebox.showinfo("Success", "Record inserted successfully.")
+            insert_window.destroy()
+            switch_tables(None)
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to insert record: {e}")
+
+    Button(insert_window, text="Insert", command=insert_record, width=7).grid(column=0, row=i + 1 // columns_per_row)
+
 
 def remove_table(table_name):
     confirm = messagebox.askyesno("Confirm Deletion", f"Are you sure you want to delete the table '{table_name}'?")
@@ -497,7 +247,7 @@ def remove_table(table_name):
             query = f"DROP TABLE {table_name}"
             kursor.execute(query)
             db_connection.commit()
-            get_database_structure() 
+            get_database_structure()
             result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [str(table[0]) for table in result.fetchall()]
             combo.set("Select table")
@@ -511,13 +261,14 @@ def remove_table(table_name):
 
 
 def remove_column(table_name, column_name):
-    confirm = messagebox.askyesno("Confirm Deletion", f"Are you sure you want to delete the column '{column_name}' from table '{table_name}'?")
+    confirm = messagebox.askyesno("Confirm Deletion",
+                                  f"Are you sure you want to delete the column '{column_name}' from table '{table_name}'?")
     if confirm:
         try:
             query = f"ALTER TABLE {table_name} DROP COLUMN {column_name}"
             kursor.execute(query)
             db_connection.commit()
-            get_database_structure()  
+            get_database_structure()
             result = kursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [str(table[0]) for table in result.fetchall()]
 
@@ -705,19 +456,18 @@ def switch_tables(event):
             width = 100
         tree.heading(col, text=col)
         tree.column(col, width=width, anchor="center", stretch=False)
-    
+
     def on_cell_click(event):
         # get the clicked item (row) and column
         tree = event.widget
         item_id = tree.identify_row(event.y)
         column_id = tree.identify_column(event.x)
-        
 
         if item_id and column_id:
             # get the column index and row index
             col_index = int(column_id.lstrip("#")) - 1
             row_index = list(tree.get_children()).index(item_id)
-        
+
             if row_index < 0 or row_index >= len(result):
                 return
 
@@ -727,7 +477,7 @@ def switch_tables(event):
             if column_types[col_index] == "BLOB":  # if it was blob then download it
                 download_blob(value)
 
-    def on_cell_double_click(event): 
+    def on_cell_double_click(event):
         tree = event.widget
         item_id = tree.identify_row(event.y)
         column_id = tree.identify_column(event.x)
@@ -741,15 +491,16 @@ def switch_tables(event):
 
             row_values = result[row_index]
             value = row_values[col_index]
-            
+
             primary_key_column = None
             primary_key_value = None
             for i, column in enumerate(columns):
-                if column_types[i] == "INTEGER" and str(kursor.execute(f"PRAGMA table_info({selection})").fetchall()[i][5] == "1"):
+                if column_types[i] == "INTEGER" and str(
+                        kursor.execute(f"PRAGMA table_info({selection})").fetchall()[i][5] == "1"):
                     primary_key_column = column
                     primary_key_value = row_values[i]
                     break
-            
+
             if not primary_key_column:
                 messagebox.showerror("Error", "No primary key found for this table.")
                 return
@@ -759,7 +510,7 @@ def switch_tables(event):
                 return
 
             x, y, width, height = bbox
-            
+
             entry = Entry(tree)
             entry.place(x=x, y=y + height // 2, width=width, anchor='w')
 
@@ -776,8 +527,8 @@ def switch_tables(event):
                     messagebox.showerror("Error", f"Error updating database: {e}")
                 finally:
                     entry.destroy()
-                    combo.set(selection)  
-                    combo.event_generate("<<ComboboxSelected>>") 
+                    combo.set(selection)
+                    combo.event_generate("<<ComboboxSelected>>")
                     return
 
             def close_entry(event=None):
@@ -787,7 +538,6 @@ def switch_tables(event):
             entry.bind("<FocusOut>", close_entry)
             entry.focus_set()
 
-    
     def on_right_click(event):
         tree = event.widget
         item_id = tree.identify_row(event.y)
@@ -801,7 +551,7 @@ def switch_tables(event):
 
             row_values = result[row_index]
             value = row_values[col_index]
-            
+
             def remove_row():
                 confirm = messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete this row?")
                 if confirm:
@@ -810,19 +560,18 @@ def switch_tables(event):
                         kursor.execute(query)
                         db_connection.commit()
                         tree.delete(item_id)
-                        combo.set(selection)  
-                        combo.event_generate("<<ComboboxSelected>>") 
+                        combo.set(selection)
+                        combo.event_generate("<<ComboboxSelected>>")
                         return
                     except Exception as e:
                         messagebox.showerror("Error", f"Error deleting row: {e}")
-                    
+
             selected_item = tree.identify("item", event.x, event.y)
             selected_tags = tree.item(selected_item, "tags")
             tree.selection_set(selected_item)
             menu = tkinter.Menu(m, tearoff=0)
             menu.add_command(label="Remove row", command=remove_row)
             menu.post(event.x_root, event.y_root)
-                
 
     for row in result:
         values = []
@@ -843,6 +592,7 @@ def switch_tables(event):
 
     insert_button = Button(label_treedata, text="+", command=insert_into_table)
     insert_button.pack(side='top', anchor='w')
+
 
 def switch_view(view):
     global m, nav_db_struct, nav_browse_data, nav_sql, label_sql, label_browse_data, label_db_struct
@@ -1359,7 +1109,8 @@ importmenu.add_cascade(label="Table", menu=table_submenu)
 menuBar.add_cascade(label="Import", menu=importmenu)
 
 exportmenu = Menu(menuBar, tearoff=0)
-exportmenu.add_command(label="Database", command=export_db)
+
+exportmenu.add_command(label="Database", command=lambda: export_db(db_connection, kursor, m))
 
 export_submenu = Menu(exportmenu, tearoff=0)
 export_submenu.add_command(label="To CSV File", command=export_table_to_csv)
