@@ -1,7 +1,6 @@
 import os
 import base64
 import sqlite3
-import csv
 from tkinter import Toplevel, LabelFrame, Label, StringVar, Entry, filedialog, messagebox, ttk, BooleanVar, Checkbutton, Button
 
 
@@ -298,38 +297,3 @@ def export_table_to_csv(db_connection, cursor, m):
     encoding_var = StringVar(value="UTF-8")
     encoding_entry = Entry(export_window, textvariable=encoding_var)
     encoding_entry.grid(row=4, column=1)
-
-    def export():
-        selected_table = table_var.get()
-        if not selected_table:
-            messagebox.showerror("Error", "Please select a table.")
-            return
-
-        folder_path = combo_var.get()
-        if not folder_path:
-            messagebox.showerror("Error", "Please select a folder path.")
-            return
-
-        delimiter = delimiter_var.get()
-        quote_char = quote_char_var.get()
-        encoding = encoding_var.get()
-
-        try:
-            cursor.execute(f"SELECT * FROM {selected_table};")
-            rows = cursor.fetchall()
-            columns = [desc[0] for desc in cursor.description]
-
-            csv_path = os.path.join(folder_path, f"{selected_table}.csv")
-
-            with open(csv_path, mode="w", newline="", encoding=encoding) as csv_file:
-                writer = csv.writer(csv_file, delimiter=delimiter, quotechar=quote_char, quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(columns)
-                writer.writerows(rows)
-
-            messagebox.showinfo("Success", f"Table exported successfully to {csv_path}")
-            export_window.destroy()
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to export table: {e}")
-
-    Button(export_window, text="Export", command=export).grid(row=5, column=0, columnspan=2)
