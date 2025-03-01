@@ -237,7 +237,7 @@ def insert_into_table():
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to insert record: {e}")
 
-    Button(insert_window, text="Insert", command=insert_record, width=7).grid(column=0, row=i + 1 // columns_per_row)
+    Button(insert_window, text="Insert", command=insert_record, width=7).grid(column=0, row=columns_per_row)
 
 
 def remove_table(table_name):
@@ -490,7 +490,6 @@ def switch_tables(event):
                 return
 
             row_values = result[row_index]
-            value = row_values[col_index]
 
             primary_key_column = None
             primary_key_value = None
@@ -567,7 +566,6 @@ def switch_tables(event):
                         messagebox.showerror("Error", f"Error deleting row: {e}")
 
             selected_item = tree.identify("item", event.x, event.y)
-            selected_tags = tree.item(selected_item, "tags")
             tree.selection_set(selected_item)
             menu = tkinter.Menu(m, tearoff=0)
             menu.add_command(label="Remove row", command=remove_row)
@@ -596,7 +594,7 @@ def switch_tables(event):
 
 def switch_view(view):
     global m, nav_db_struct, nav_browse_data, nav_sql, label_sql, label_browse_data, label_db_struct
-    match (view):  # changing tabs
+    match view:  # changing tabs
         case "1":
             nav_db_struct.config(bg=m.cget("bg"))
             nav_browse_data.config(bg='lightgray')
@@ -639,7 +637,7 @@ def create_db_from_sql(sql_file):
         db_connection.commit()
 
     except sqlite3.Error as e:
-        messagebox.showerror("Error", "Error creating database: {e}")
+        messagebox.showerror("Error", f"Error creating database: {e}")
 
 
 def create_db_from_xml(xml_file):
@@ -738,10 +736,10 @@ def create_db_from_xml(xml_file):
         messagebox.showerror("Error", f"Unexpected Error: {e}")
 
 
-def import_db(format):
+def import_db(file_format):
     global db_connection, cursor, sql_input_textbox, sql_output_textbox, print_button, combo, m, label_treedata, result_label
-
-    match format:
+    filetype = ""
+    match file_format:
         case ".db":
             filetype = "SQLite Database"
         case ".sql":
@@ -750,11 +748,11 @@ def import_db(format):
             filetype = "Extensible Markup Language File"
 
     db_path = filedialog.askopenfilename(
-        title=f"Select a {format} file",
-        filetypes=[(filetype, f"*{format}")]
+        title=f"Select a {file_format} file",
+        filetypes=[(filetype, f"*{file_format}")]
     )
 
-    if format == ".db":
+    if file_format == ".db":
         os.chmod(db_path, 0o666)  # asking for access to edit the .db file
 
     if db_path:
@@ -762,7 +760,7 @@ def import_db(format):
             if db_connection:
                 db_connection.close()
 
-            match format:
+            match file_format:
                 case ".db":
                     db_connection = sqlite3.connect(db_path, check_same_thread=False, uri=True)
                 case ".sql":
@@ -799,7 +797,6 @@ def import_db(format):
 
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error connecting to database: {e}")
-            import_db()
 
 
 def import_table_from_csv():
@@ -881,7 +878,6 @@ def execute_query():
             return
         try:
             if "blob(" in query.lower():
-                new_query = ""
                 start = query.lower().find("blob(") + 5
                 end = query.lower().find(")", start)
                 if start > 0 and end > 0:
@@ -930,6 +926,7 @@ def execute_query():
 
                     for row in result:
                         values = []
+                        i = 0
                         for i, value in enumerate(row):
                             if column_types[i] == "BLOB" and value:
                                 values.append("BLOB")
