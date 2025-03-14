@@ -2,6 +2,66 @@ import os
 import base64
 import sqlite3
 from tkinter import Toplevel, LabelFrame, Label, StringVar, Entry, filedialog, messagebox, ttk, BooleanVar, Checkbutton, Button
+import json
+
+
+def export_table_to_json(db_connection, cursor, m):
+    if not db_connection:
+        messagebox.showerror("Error", "No database connection found.")
+        return
+
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables = [row[0] for row in cursor.fetchall()]
+
+    if not tables:
+        messagebox.showerror("Error", "No tables found in the database.")
+        return
+
+    export_window = Toplevel(m)
+    export_window.title("Export Table to JSON")
+    export_window.resizable(False, False)
+
+    Label(export_window, text="Select Table: ").grid(row=0, column=0)
+    table_var = StringVar()
+    table_combo = ttk.Combobox(export_window, textvariable=table_var, values=tables, state="readonly")
+    table_combo.grid(row=0, column=1)
+
+    Label(export_window, text="Select path:").grid(row=1, column=0)
+
+    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+    combobox, combo_var = setup_path_combobox(export_window, desktop_path)
+    combobox.grid(row=1, column=1)
+
+    def confirm_export():
+        selected_path = combo_var.get()
+        table_name = table_var.get()
+
+        if not os.path.isdir(selected_path):
+            messagebox.showerror("Error", "Please select a valid directory.")
+            return
+        if not table_name:
+            messagebox.showerror("Error", "Please select a table.")
+            return
+
+        json_file_path = os.path.join(selected_path, f"{table_name}.json")
+
+        try:
+            cursor.execute(f"SELECT * FROM {table_name}")
+            rows = cursor.fetchall()
+            cursor.execute(f"PRAGMA table_info({table_name})")
+            columns = [col[1] for col in cursor.fetchall()]
+
+            data = [dict(zip(columns, row)) for row in rows]
+
+            with open(json_file_path, 'w', encoding='utf-8') as json_file:
+                json.dump(data, json_file, indent=4)
+
+            messagebox.showinfo("Success", f"Table '{table_name}' exported to JSON file successfully.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export table to JSON file: {str(e)}")
+
+    export_button = Button(export_window, text="Export", command=confirm_export, width=18)
+    export_button.grid(row=2, column=0, columnspan=2, pady=20)
 
 
 def setup_path_combobox(parent, default_path):

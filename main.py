@@ -8,7 +8,7 @@ from tkinter import *
 from tkinter import ttk
 import sqlite3
 import xml.etree.ElementTree as et
-from exports import export_db, export_table_to_csv
+from exports import export_db, export_table_to_csv,export_table_to_json
 
 db_connection = None
 cursor = None
@@ -1018,6 +1018,7 @@ exportmenu.add_command(label="Database", command=lambda: export_db(db_connection
 
 export_submenu = Menu(exportmenu, tearoff=0)
 export_submenu.add_command(label="To CSV File", command=lambda: export_table_to_csv(db_connection, cursor, m))
+export_submenu.add_command(label="To JSON File", command=lambda: export_table_to_json(db_connection, cursor, m))
 
 exportmenu.add_cascade(label="Table", menu=export_submenu)
 
