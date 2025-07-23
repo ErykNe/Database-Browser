@@ -3,6 +3,8 @@
 A GUI application to browse, analyze, and manipulate data in SQLite databases.  
 Built entirely in Python with Tkinter for the interface, this tool allows users to visually interact with SQLite databases, import/export data, and perform common database operations with ease.
 
+![db-browser](https://github.com/user-attachments/assets/d5ea1280-aa96-4d25-926b-dcffd8a0c3be)
+
 ---
 
 ## Features
